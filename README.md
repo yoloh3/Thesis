@@ -15,7 +15,8 @@ on handwritten-digit recognition
 # Features
 
 File-directory tree:
-	- README.md : instruction
-	- ann_core  : main source code
-	- doc 		  : documents
-	- src_simul : another source code for ANN simulation
+
+- README.md : instruction
+- ann_core  : main source code
+- doc 		  : documents
+- src_simul : another source code for ANN simulation
