@@ -5,7 +5,7 @@ addpath('./data');
 
 load_data;
 
-epochs = 1;
+epochs = 5;
 batchsize = 250;
 learning_rate = 1e-3;
 iters_per_epoch = 1000;
