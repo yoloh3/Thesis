@@ -16,13 +16,15 @@
 -- @ID              :
 --
 ---------------------------------------------------------------------------------
+library std;
 use std.textio.all;
+use std.env.finish;
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_textio.all;
 use ieee.numeric_std.all;
-library std;
-use std.env.finish;
+use work.conf.all;
+use work.tb_conf.all;
 -- library xil_defaultlib;
 -- use xil_defaultlib.conf.all;
 
@@ -58,21 +60,57 @@ begin
                 max_index    => max_index,
                 finish       => fnish);
 
-		stim_proc: process
-      variable oline   : line;
-      file myfile      : text;
-		begin
+		stim_proc : process
+      type int_array is array (integer range <>) of integer;
 
-      -- main running
+      impure function init_expected return int_array is
+        variable out_tmp : int_array(0 to NUM_OF_TESTS - 1);
+        variable iline   : line;
+        file myfile      : text;
+      begin
+        file_open(myfile, "../tb/output_labers.bin", read_mode);
+        for i in 0 to NUM_OF_TESTS - 1 loop 
+          readline(myfile, iline);
+          read(iline, out_tmp(i));
+        end loop;
+        return out_tmp;
+      end function;
+
+      variable expected_out : int_array(0 to NUM_OF_TESTS - 1) := init_expected;
+      variable actual_out   : int_array(0 to NUM_OF_TESTS - 1) := (others => 0);
+      variable correct_num  : integer := 0;
+		begin
+      -- file_open(myfile, "../tb/output_ann.bin", APPEND_MODE);
+      -- write(oline, integer'image(to_integer(unsigned(max_index)) - 1));
+      -- writeline(myfile, oline);
+
+      print("Run test:");
 			wait for period;
 			push_button(0) <= '1';
-			wait for period;
-			push_button(0) <= '0';
-			wait until fnish = '1';
+      wait until fnish = '1';
 
-      file_open(myfile, "../tb/output_ann.bin", APPEND_MODE);
-      write(oline, integer'image(to_integer(unsigned((max_index))) - 1));
-      writeline(myfile, oline);
+      actual_out(0) := to_integer(unsigned(max_index) - 1);
+      if actual_out(0) = expected_out(0) then
+        correct_num := correct_num + 1;
+      end if;
+      print("1");
+
+      for i in 1 to NUM_OF_TESTS - 1 loop
+        print(integer'image(i+1) & " ");
+        push_button(0) <= '0';
+        push_button(1) <= '1';
+        wait for period;
+        push_button(0) <= '1';
+        wait until fnish = '1';
+        actual_out(i) := to_integer(unsigned(max_index) - 1);
+        if actual_out(i) = expected_out(i) then
+          correct_num := correct_num + 1;
+        end if;
+      end loop;
+
+      print("Classification: "
+           & integer'image(correct_num)
+           & "/" & integer'image(NUM_OF_TESTS));
 
       finish(1);
 		end process;

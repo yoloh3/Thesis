@@ -11,7 +11,9 @@
 -- @Created Date    : Mar 28 2018       @Modified Date : Mar 28 2018 17:15
 -- @Project         : Artificial Neural Network
 -- @Module          : top_module
--- @Description     :
+-- @Description     : Top module of Neural Network architecture, apply on
+-- handwritten-digit recognization. Output 'max_index' signal is the digit
+-- output will approach when finish assert.
 -- @Version         :
 -- @ID              :
 --
@@ -213,6 +215,38 @@ begin
     end if;
   end process;
 
+  ram_i : blk_mem_img
+    port map (clka  => clk,
+               ena   => read_ena,
+               wea   => bram_i_wea,
+               addra => bram_i_adr,
+               dina  => bram_i_in,
+               douta => bram_i_out);
+
+  ram_w : blk_mem_weight
+     port map (clka  => clk,
+               ena   => read_ena,
+               wea   => bram_w_wea,
+               addra => bram_w_adr,
+               dina  => bram_w_in,
+               douta => bram_w_out);
+
+  ram_b : blk_mem_bias
+    port map (clka  => clk,
+               ena   => read_ena,
+               wea   => bram_b_wea,
+               addra => bram_b_adr,
+               dina  => bram_b_in,
+               douta => bram_b_out);
+
+  ram_r : blk_mem_res
+     port map (clka  => clk,
+               ena   => readwrite_ena,
+               wea   => bram_r_wea,
+               addra => bram_r_adr,
+               dina  => neuron_y,
+               douta => bram_r_out);
+
 	ctrl: controller
   port map (clk          => clk,
             start        => push_button(0),
@@ -242,38 +276,6 @@ begin
               w      => bram_w_out,
               b      => bram_b_out,
               y      => neuron_y);
-
-   ram_i : blk_mem_img
-     port map (clka  => clk,
-               ena   => read_ena,
-               wea   => bram_i_wea,
-               addra => bram_i_adr,
-               dina  => bram_i_in,
-               douta => bram_i_out);
-
-   ram_w : blk_mem_weight
-     port map (clka  => clk,
-               ena   => read_ena,
-               wea   => bram_w_wea,
-               addra => bram_w_adr,
-               dina  => bram_w_in,
-               douta => bram_w_out);
-
-   ram_b : blk_mem_bias
-     port map (clka  => clk,
-               ena   => read_ena,
-               wea   => bram_b_wea,
-               addra => bram_b_adr,
-               dina  => bram_b_in,
-               douta => bram_b_out);
-
-   ram_r : blk_mem_res
-     port map (clka  => clk,
-               ena   => readwrite_ena,
-               wea   => bram_r_wea,
-               addra => bram_r_adr,
-               dina  => neuron_y,
-               douta => bram_r_out);
 
    max_0 : max
      port map(clk,
