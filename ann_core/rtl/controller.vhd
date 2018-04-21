@@ -124,13 +124,14 @@ begin
         next_state <= init_state;
 
       when read_state =>
-        if(next_neuron = '1') then
-          next_state <= wb_state; 
+          next_state <= calc_state;
+        -- if(next_neuron = '1') then
+          -- next_state <= wb_state;
         -- elsif (signed(weight_in) = 0) then
           -- next_state <= read_state;
-        else
-          next_state <= calc_state;
-        end if;
+        -- else
+          -- next_state <= calc_state;
+        -- end if;
 
       when calc_state =>
         if calc_count = max_count then
@@ -239,7 +240,7 @@ begin
           reset_sum <= '0';
           wb_ena    <= '0';
           max_ena   <= '0';
-          calculate <= '1';
+          calculate <= '0';
           activate  <= '0';
           wb_ena    <= '0';
 
@@ -277,14 +278,14 @@ begin
           end if;
 
         when calc_state =>
-          calculate <= '0';
+          calculate <= '1';
           if calc_count = max_count then
             calc_count <= 0;
           else
             calc_count <= calc_count + 1;
           end if;
                           -- if all the inputs have been read, move to next neuron
-          if input_counter_in = num_of_inputs + 1 then -- + 1 to take bias into account
+          if input_counter_in = num_of_inputs + 1 then
             -- inner control signal
             next_neuron <= '1';
           else
@@ -293,6 +294,7 @@ begin
 
         when wb_state =>
           -- outer control signals
+          calculate <= '1';
           wb_ena <= '0';
           activate <= '1'; -- enable activation function
           wb_address_in <= wb_address + 1;  -- for remembering where to save the answer
