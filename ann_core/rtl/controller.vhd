@@ -70,9 +70,10 @@ architecture behavioral of controller is
   signal wb_address_in : std_logic_vector(MEM_R_N-1 downto 0) := (others => '0');
 
   signal num_of_inputs  : integer := INPUTS_N / PARALLEL_RATE - 1; -- number of inputs go in
-  signal num_of_neurons : integer := NEURONS_N   -1; -- number of neuron in current layer
+  signal num_of_neurons : integer := NEURONS_N - 1;                -- number of neuron in current layer
   signal calc_count     : integer := 0;
-  signal max_count      : integer := 1;
+  signal calc_count_in  : integer := 0;
+  constant max_count    : integer := 1;
 
 begin
 
@@ -95,10 +96,13 @@ begin
       bias_address   <= bias_address_in;
       result_address <= result_address_in;
       wb_address     <= wb_address_in;
+      calc_count     <= calc_count_in;
+      finish         <= done;
     end if;
   end process;
 
-  nsf : process (current_state, start, nlayer, next_neuron, done, restart, ready) -- weight_in
+  nsf : process (current_state, start, nlayer, next_neuron, done, restart,
+    ready, calc_count) 
   begin
     case current_state is
       when idle_state =>
@@ -125,13 +129,6 @@ begin
 
       when read_state =>
           next_state <= calc_state;
-        -- if(next_neuron = '1') then
-          -- next_state <= wb_state;
-        -- elsif (signed(weight_in) = 0) then
-          -- next_state <= read_state;
-        -- else
-          -- next_state <= calc_state;
-        -- end if;
 
       when calc_state =>
         if calc_count = max_count then
@@ -166,8 +163,8 @@ begin
     end case;
   end process;
 
-  control : process (current_state, neuron_counter, input_counter,
-                      layer_counter, input_address, weight_address,
+  control : process (current_state, neuron_counter, input_counter, calc_count, 
+                      layer_counter, input_address, weight_address, bias_address,
                       result_address, wb_address, num_of_inputs, num_of_neurons)
   begin
 
@@ -181,8 +178,6 @@ begin
       nlayer      <= '0';
       next_neuron <= '0';
       done        <= '0';
-      -- mux_i_sel   <= '0';
-      -- reset       <= '1';
 
       neuron_counter_in <= neuron_counter;
       input_counter_in  <= input_counter;
@@ -195,14 +190,10 @@ begin
 
       case current_state is
         when idle_state =>
-          -- reset counters
-          -- reset             <= '1';
           neuron_counter_in <= 0;
           input_counter_in  <= 0;
-          -- inner control signals
           next_neuron       <= '0';
           done              <= '0';
-          -- outer control signals
           read_ena          <= '0';
           wb_ena            <= '0';
           max_ena           <= '0';
@@ -223,9 +214,8 @@ begin
           mux_i_sel         <= '0';
 
         when init_state =>
-          -- reset     <= '0';
           read_ena  <= '1'; -- enable to brams and neuron
-          calc_count <= 0;
+          calc_count_in <= 0;
 
         when count_state =>
           input_counter_in <= input_counter + 1;
@@ -235,7 +225,6 @@ begin
           end if;
 
         when read_state =>
-          -- outer control signals
           read_ena  <= '1'; -- enable to brams and neuron
           reset_sum <= '0';
           wb_ena    <= '0';
@@ -244,8 +233,9 @@ begin
           activate  <= '0';
           wb_ena    <= '0';
 
-          calc_count        <= calc_count + 1;
+          calc_count_in     <= calc_count + 1;
           input_counter_in  <= input_counter + 1;
+
           -- increase memory addresses
           input_address_in  <= input_address + PARALLEL_RATE;
           weight_address_in <= weight_address + PARALLEL_RATE;
@@ -258,19 +248,7 @@ begin
             result_address_in <= wb_address;
           end if;
           
-          -- if (layer_counter > 0) then
-            -- mux_i_sel <= '1'; -- select input from result RAM
-          -- end if;
-
-          -- read input from image bram first
-          -- if (input_counter = 0) then
-            -- mux_i_sel <= '1';
-          --input_address_in <= (others => '0');
-          -- select input from RAM if first layer
-          -- otherwise get input from results RAM
-          -- if all the inputs have been read, move to next neuron
-          if input_counter_in = num_of_inputs then -- + 1 to take bias into account
-            -- inner control signal
+          if input_counter = num_of_inputs then
             next_neuron <= '1';
             bias_address_in  <= bias_address + 1;
           else
@@ -280,50 +258,36 @@ begin
         when calc_state =>
           calculate <= '1';
           if calc_count = max_count then
-            calc_count <= 0;
+            calc_count_in <= 0;
           else
-            calc_count <= calc_count + 1;
+            calc_count_in <= calc_count + 1;
           end if;
-                          -- if all the inputs have been read, move to next neuron
-          if input_counter_in = num_of_inputs + 1 then
-            -- inner control signal
+
+          -- if all the inputs have been read, move to next neuron
+          if input_counter = num_of_inputs + 1 then
             next_neuron <= '1';
           else
             next_neuron <= '0';
           end if;
 
         when wb_state =>
-          -- outer control signals
           calculate <= '1';
           wb_ena <= '0';
           activate <= '1'; -- enable activation function
           wb_address_in <= wb_address + 1;  -- for remembering where to save the answer
-          -- if layer_counter = 0 then
-            -- result_address <= wb_address; -- skip to address we should be writing to
-          -- end if;
-          -- result_address <= result_address + 1;
 
           -- if it's the last layer, find out maximum result also
-          if layer_counter = LAYERS_N-1 then
-            max_ena <= '1';
-          end if;
 
         when res_state =>
-
           wb_ena     <= '1';
           reset_sum  <= '1';
-          calc_count <= 0;
-          -- if all neurons have been calculated, move to next state
+          calc_count_in <= 0;
 
+          -- if all neurons have been calculated, move to next state
           if neuron_counter = num_of_neurons then
-            -- inner control signal
             nlayer    <= '1';
-            -- result_address_in <= (others => '0');
-          -- else
-            -- result_address_in <= result_address + 1;
           end if;
 
-          -- inner control signal
           next_neuron <= '0';
           -- increment neuron counter, reset input counter and image address
           neuron_counter_in <= neuron_counter + 1;
@@ -333,6 +297,9 @@ begin
               result_address_in <= (others => '0');
           end if;
           -- if it's not an input layer then the input is coming from results RAM
+          if layer_counter = LAYERS_N-1 then
+            max_ena <= '1';
+          end if;
 
         when nlayer_state =>
           wb_ena            <= '0';
@@ -362,5 +329,4 @@ begin
           reinit    <= '0';
       end case;
   end process;
-  finish <= done;
 end behavioral;
