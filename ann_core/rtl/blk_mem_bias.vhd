@@ -46,7 +46,7 @@ end entity;
 ---------------------------------------------------------------------------------
 architecture behavior of blk_mem_bias is
   constant DEPTH     : integer := BIAS_N;
-  constant file_name : string := "../tb/bias.bin";
+  constant file_name : string := "../../ann_core/tb/bias.bin";
 
   impure function init_ram return input_array is
     variable ram_tmp : input_array(0 to DEPTH - 1);
@@ -62,8 +62,8 @@ architecture behavior of blk_mem_bias is
       ram_tmp(i) :=
         std_logic_vector(to_signed(integer(value*2.0**FRACTION), BIT_WIDTH));
     end loop;
-      return ram_tmp;
     file_close(myfile);
+    return ram_tmp;
   end function;   
 
   signal ram : input_array(0 to DEPTH - 1) := init_ram;
