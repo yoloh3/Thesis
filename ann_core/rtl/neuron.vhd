@@ -25,7 +25,6 @@ use ieee.fixed_pkg.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_signed.all;
 use work.conf.all;
-use work.tb_conf.all;
 
 entity neuron is
   generic (
@@ -95,7 +94,7 @@ begin
   sum_of_mult  <= mult_tmp(14);
 
   sum_in <= sum_tmp;
-  add_and_multiply: process (clk) is
+  add_and_multiply: process (reset, clk) is
   begin
     if reset = '1' then
       sum_tmp <= (others => '0');

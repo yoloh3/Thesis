@@ -2,7 +2,7 @@
 
 % Set parameters
 fraction = 10;
-num_of_test = 100;
+num_of_test = 1;
 
 % Write weights to file
 file_i = fopen('../tb/input.bin','w');
@@ -61,16 +61,52 @@ hiddenActivFunct(:,2) = round(hiddenActivFunct(:,1)*2^fraction);
 outputActivFunct(:,2) = round(outputActivFunct(:,1)*2^fraction);
 
 % Test 10000 input image (test_images & test_layers)
-file_test = fopen('../tb/test_input.bin','w');
-ram_input_test = test_images';
-for i = 1:784*num_of_test
-    value = ram_input_test(i);
-    fprintf(file_test, '%f\n', value);
-end
+% file_test = fopen('../tb/input.bin','w');
+% ram_input_test = test_images';
+% for i = 1:784*num_of_test
+%     value = ram_input_test(i);
+%     fprintf(file_test, '%f\n', value);
+% end
+% 
+% file_labers = fopen('../tb/output_labers.bin','w');
+% ram_labers_test = test_labels;
+% for i = 1:num_of_test
+%     value = ram_labers_test(i);
+%     fprintf(file_labers, '%d\n', value);
+% end
 
-file_labers = fopen('../tb/test_labers.bin','w');
-ram_labers_test = test_labels;
-for i = 1:num_of_test
-    value = ram_labers_test(i);
-    fprintf(file_labers, '%d\n', value);
+
+% Write data for vivado synthesis
+file_i = fopen('../impl/fpga/input.coe','w');
+fprintf(file_i, 'memory_initialization_radix = 10\nmemory_initialization_vector = \n');
+for i = 1:numel(nn.layers{1, 1}.x(:,1))
+    value = round(nn.layers{1, 1}.x(i, 1)*2^fraction);
+    fprintf(file_i, '%d, ', value);
 end
+fclose(file_i);
+
+file_b = fopen('../impl/fpga/bias.coe','w');
+fprintf(file_b, 'memory_initialization_radix = 10\nmemory_initialization_vector = \n');
+for i = 1:numel(nn.layers{1, 1}.b)
+    value = round(nn.layers{1, 1}.b(i)*2^fraction);
+    fprintf(file_b, '%d, ', value);
+end
+for i = 1:numel(nn.layers{1, 3}.b)
+    value = round(nn.layers{1, 3}.b(i)*2^fraction);
+    fprintf(file_b, '%d, ', value);
+end
+fclose(file_b);
+
+file_w = fopen('../impl/fpga/weight.coe','w');
+fprintf(file_w, 'memory_initialization_radix = 10\nmemory_initialization_vector = \n');
+ram_w_tmp1 = nn.layers{1, 1}.W';
+for i = 1:numel(nn.layers{1, 1}.W)
+    value = round(ram_w_tmp1(i)*2^fraction);
+    fprintf(file_w, '%d, ', value);
+end
+ram_w_tmp2 = nn.layers{1, 3}.W';
+for i = 1:numel(nn.layers{1, 3}.W)
+    value = round(ram_w_tmp2(i)*2^fraction);
+    fprintf(file_w, '%d, ', value);
+end
+fclose(file_w);
