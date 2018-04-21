@@ -22,7 +22,9 @@ use ieee.numeric_std.all;
 use ieee.math_real.all;
 use std.textio.all;
 use work.conf.all;
+--pragma synthesis_off
 use work.tb_conf.all;
+--pragma synthesis_on
 -- library xil_defaultlib;
 -- use xil_defaultlib.conf.all;
 
@@ -55,9 +57,11 @@ begin
         out_real := sigmoid_funct(real(to_integer(signed(input))) / 2.0**FRACTION);
         output <= std_logic_vector(to_signed(integer(out_real * 2.0**FRACTION), BIT_WIDTH));
 
+        --pragma synthesis_off
         print("Sigmoid out(" & integer'image(counter mod (NEURONS_N) ) & ") = "
              & real'image(out_real) & "  =>  "
              & integer'image((integer(out_real*2.0**FRACTION))));
+        --pragma synthesis_on
 
         counter := counter + 1;
       end if;

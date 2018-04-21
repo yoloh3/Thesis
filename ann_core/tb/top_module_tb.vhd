@@ -16,12 +16,13 @@
 -- @ID              :
 --
 ---------------------------------------------------------------------------------
+use std.textio.all;
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_textio.all;
+use ieee.numeric_std.all;
 library std;
 use std.env.finish;
-use std.textio.all;
 -- library xil_defaultlib;
 -- use xil_defaultlib.conf.all;
 
@@ -58,12 +59,20 @@ begin
                 finish       => fnish);
 
 		stim_proc: process
+      variable oline   : line;
+      file myfile      : text;
 		begin
+
+      -- main running
 			wait for period;
 			push_button(0) <= '1';
 			wait for period;
 			push_button(0) <= '0';
 			wait until fnish = '1';
+
+      file_open(myfile, "../tb/output_ann.bin", APPEND_MODE);
+      write(oline, integer'image(to_integer(unsigned((max_index))) - 1));
+      writeline(myfile, oline);
 
       finish(1);
 		end process;
