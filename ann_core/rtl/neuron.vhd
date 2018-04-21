@@ -1,3 +1,21 @@
+---------------------------------------------------------------------------------
+--
+-- The University of Engineering and Technology, Vietnam National University.
+-- All right resevered.
+--
+-- Copyright notification
+-- No part may be reproduced except as authorized by written permission.
+-- 
+-- @File            : neuron.vhd
+-- @Author          : Huy-Hung Ho       @Modifier      : Huy-Hung Ho
+-- @Created Date    : Mar 28 2018       @Modified Date : Mar 28 2018 17:16
+-- @Project         : Artificial Neural Network
+-- @Module          : neuron
+-- @Description     :
+-- @Version         :
+-- @ID              :
+--
+---------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
 -- library xil_defaultlib;
@@ -7,6 +25,7 @@ use ieee.fixed_pkg.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_signed.all;
 use work.conf.all;
+use work.tb_conf.all;
 
 entity neuron is
   generic (

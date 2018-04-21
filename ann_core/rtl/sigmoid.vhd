@@ -20,9 +20,11 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
+use std.textio.all;
+use work.conf.all;
+use work.tb_conf.all;
 -- library xil_defaultlib;
 -- use xil_defaultlib.conf.all;
-use work.conf.all;
 
 entity sigmoid is
   port (
@@ -43,13 +45,21 @@ architecture behav of sigmoid is
 begin
   process (reset, clk) is
     variable out_real : real;
+    variable counter  : integer := 1;
   begin
+
     if reset = '1' then
         output <= (others => '0');
     elsif rising_edge(clk) then
       if (enable = '1') then
         out_real := sigmoid_funct(real(to_integer(signed(input))) / 2.0**FRACTION);
         output <= std_logic_vector(to_signed(integer(out_real * 2.0**FRACTION), BIT_WIDTH));
+
+        print("Sigmoid out(" & integer'image(counter mod (NEURONS_N) ) & ") = "
+             & real'image(out_real) & "  =>  "
+             & integer'image((integer(out_real*2.0**FRACTION))));
+
+        counter := counter + 1;
       end if;
     end if;
   end process;
