@@ -27,6 +27,7 @@ package conf is
   -- constants
   constant PARALLEL_RATE : integer := 16;
   constant INPUTS_N      : integer := 784;
+  constant NUM_OF_TESTS  : integer := 1;
   constant NEURONS_N     : integer := 48;
   constant NEURONS_O     : integer := 10;
   constant LAYERS_N      : integer := 2;
@@ -35,7 +36,7 @@ package conf is
 
   -- bit widths for blockrams
   -- NOTE: Check if addr not enought
-  constant MEM_I_N : integer := 10;
+  constant MEM_I_N : integer := 23;
   constant MEM_W_N : integer := 16;
   constant MEM_B_N : integer := 6;
   constant MEM_R_N : integer := 7;
