@@ -1,0 +1,53 @@
+<!---
+vim: ft=markdown
+/*******************************************************************************
+// Project name   :
+// File name      : outline.txt
+// Created date   : Mar 19 2018
+// Author         : Huy-Hung Ho
+// Last modified  : Mar 19 2018 14:55
+// Desc           :
+*******************************************************************************/
+-->
+
+### Đề mục
+
+1. Mở đầu
+	1.1. Bối cảnh và động lực thúc đẩy
+		- Mạng nơ-ron nhân tạo và ứng dụng
+		- Giới hạn của thực thi phần mềm -> thực thi phần cứng
+		- Khó khăn khi ứng dụng ANN vào các thiết bị IoT
+		- Giới thiệu đóng góp khóa luận thiết kế ANN chi phí thấp
+	1.2. Đóng góp của khóa luận
+		- Thiết kế mạng nơ-ron nhân tạo ứng dụng trong nhận dạng chữ viết tay
+		- Đánh giá các nghiên cứu liên quan
+		- Đề xuất kiến trúc ANN chi phí thấp, có khả năng ứng dụng trong các thiết bị IoT
+	1.3. Bố cục khóa luận
+
+2. Mạng nơ-ron nhân tạo
+	2.1. Tổng quan về mạng nơ-ron nhân tạo
+		- Mạng nơ-ron sinh học
+		- Mô hình hóa toán học
+		- Mô hình phân loại dựa vào mạng nơ-ron
+	2.2. Kiến trúc mạng nơ-ron song song
+		- Kiến trúc chung
+		- Hàm tổng
+		- Hàm kích hoạt
+		- Kết luận: độ phức tạp, đề xuất thiết kế tối ưu 
+
+3. Phương pháp tính toán xấp xỉ Stochastic Computing
+	3.1. Cơ sở toán học
+	3.2. Ưu điểm và nhược điểm của Stochastic Computing
+	3.3. Thực thi Stochastic Computing vào mạng nơ-ron nhân tạo
+	
+4. Thiết kế phần cứng một mạng nơ-ron nhân tạo sử dụng phương pháp Stochastic Computing
+	4.1. Kiến trúc bộ tổng sử dụng Stochastic Computing
+	4.2. Kiến trúc mạng nơ-ron nhân tạo sử dụng nhận dạng chữ viết tay
+
+5. Kết quả thực thi phần cứng và đánh giá
+	5.1. Phương pháp đánh giá
+		Matlab, VHDL, thử nghiệm, kiểm thử
+	5.2. Kết quả mô phỏng
+	5.3. Kết quả tổng hợp phần cứng
+	
+6. Kết luận
