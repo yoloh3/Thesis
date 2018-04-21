@@ -20,12 +20,12 @@ smooth_loss = log(10);
 % nn.layers{3} = Linear(40, 10, batchsize);
 % nn.layers{4} = Softmax(10, 10, batchsize);
 %Sigmoid NN
- nn.layers{1} = Linear(28 * 28, 40, batchsize);
- nn.layers{2} = Sigmoid(40, 40, batchsize);
- nn.layers{3} = Linear(40, 40, batchsize);
- nn.layers{4} = Sigmoid(40,40,batchsize);
- nn.layers{5} = Linear(40,10,batchsize);
- nn.layers{6} = Softmax(10, 10, batchsize);
+ nn.layers{1} = Linear(28 * 28, 48, batchsize);
+ nn.layers{2} = Sigmoid(48, 48, batchsize);
+%  nn.layers{3} = Linear(50, 50, batchsize);
+%  nn.layers{4} = Sigmoid(50,50,batchsize);
+ nn.layers{3} = Linear(48, 10, batchsize);
+ nn.layers{4} = Softmax(10, 10, batchsize);
 for e=1:1:epochs
 
     fprintf('Epoch %d...\n', e);

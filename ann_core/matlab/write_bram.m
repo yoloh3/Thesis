@@ -1,7 +1,10 @@
 % Huy-Hung Ho
 
+% Set parameters
 fraction = 10;
+num_of_test = 100;
 
+% Write weights to file
 file_i = fopen('../tb/input.bin','w');
 file_b = fopen('../tb/bias.bin', 'w');
 file_w = fopen('../tb/weight.bin','w');
@@ -43,7 +46,7 @@ outputWeights = nn.layers{1, 3}.W;
 outputBias = nn.layers{1, 3}.b;
 
 hiddenWeightedIn = hiddenWeights*inputVector + hiddenBias;
-hiddenActivFunct = 1./(1.0 + exp(-(hiddenWeightedIn)));
+hiddenActivFunct =1./(1.0 + exp(-(hiddenWeightedIn)));
 
 outputWeightedIn = outputWeights*hiddenActivFunct + outputBias;
 outputActivFunct = 1./(1.0 + exp(-(outputWeightedIn)));            
@@ -56,3 +59,18 @@ ram_i = round(nn.layers{1, 1}.x(:,1)*2^fraction);
             
 hiddenActivFunct(:,2) = round(hiddenActivFunct(:,1)*2^fraction);
 outputActivFunct(:,2) = round(outputActivFunct(:,1)*2^fraction);
+
+% Test 10000 input image (test_images & test_layers)
+file_test = fopen('../tb/test_input.bin','w');
+ram_input_test = test_images';
+for i = 1:784*num_of_test
+    value = ram_input_test(i);
+    fprintf(file_test, '%f\n', value);
+end
+
+file_labers = fopen('../tb/test_labers.bin','w');
+ram_labers_test = test_labels;
+for i = 1:num_of_test
+    value = ram_labers_test(i);
+    fprintf(file_labers, '%d\n', value);
+end
