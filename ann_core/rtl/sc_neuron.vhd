@@ -180,7 +180,7 @@ begin
     port map (clk, reset, enable, sc_mult(0), v_mul);
   count4: entity work.sc_counter
     port map (clk, reset, enable, sc_sum, v_sum);
---pragma synthesis_on
+  --pragma synthesis_on
 
   sum_count: process (clk, reset)
     --pragma synthesis_off
@@ -209,8 +209,8 @@ begin
         print("w1_sc    = " & real'image(real(v_w)/2.0**(SC_WIDTH-1)-1.0));
         print("b_sc     = " & real'image(real(to_integer(unsigned(b)))/2.0**(SC_WIDTH-1)-1.0));
         print("x1*w1_sc = " & real'image(real(v_mul)/2.0**(SC_WIDTH-1)-1.0));
-        -- print("sum_sc   = " & real'image(real(v_sum)/2.0**(SC_WIDTH-1)-1.0));
-        -- print("sum+b_sc = " & real'image(real(to_integer(sum))/2.0**(SC_WIDTH-1)-test_count));
+        print("sum_sc   = " & real'image(real(v_sum)/2.0**(SC_WIDTH-1)-1.0));
+        print("sum+b_sc = " & real'image(real(to_integer(sum))/2.0**(SC_WIDTH-1)-test_count));
       end if;
       --pragma synthesis_on
 

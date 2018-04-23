@@ -128,8 +128,8 @@ begin
     print("w1_expect         '= " & real'image(v_w(0)));
     print("b/16_expect       '= " & real'image(v_b/16.0));
     print("x1*w1_expect      '= " & real'image(v_x(0) * v_w(0)));
-    -- print("sum/16_expect     '= " & real'image(sum/16.0));
-    -- print("(sum+b)/16_expect '= " & real'image((sum+v_b)/16.0));
+    print("sum/16_expect     '= " & real'image(sum/16.0));
+    print("(sum+b)/16_expect '= " & real'image((sum+v_b)/16.0));
 
     print("Expected vs actual: "
         & real'image(v_y) & " "
