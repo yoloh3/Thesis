@@ -28,10 +28,12 @@ use ieee.std_logic_1164.all;
 --------------------------------------------------------------------------------- 
 entity sc_add is
   port (
-    x1  : in std_logic;
-    x2  : in std_logic;
-    sel : in std_logic;
-    y   : out std_logic
+    clk   : in std_logic;
+    reset : in std_logic;
+    x1    : in std_logic;
+    x2    : in std_logic;
+    sel   : in std_logic;
+    y     : out std_logic
   );
 end entity; 
 
@@ -39,7 +41,20 @@ end entity;
 -- Architecture description
 ---------------------------------------------------------------------------------
 architecture behavior of sc_add is
+  signal ctrl    : std_logic;
+  signal q, q_in : std_logic;
 begin
-  y <= x1 when sel = '1' else x2; 
-end behavior;
+  ctrl <= x1 XOR x2;
 
+  tff: process (clk, reset) is
+  begin
+    if reset = '1' then
+        q <= '0';
+    elsif rising_edge(clk) then         -- rising clock edge
+        q <= ctrl XOR q_in;
+    end if;
+  end process tff;
+  q_in <= q; 
+
+  y <= q when ctrl = '1' else x1;
+end behavior;

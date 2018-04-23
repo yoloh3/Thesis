@@ -6,7 +6,7 @@
 --
 -- Copyright notification
 -- No part may be reproduced except as authorized by written permission.
--- 
+--
 -- @File            : sc_neuron.vhd
 -- @Author          : Huy-Hung Ho       @Modifier      : Huy-Hung Ho
 -- @Created Date    : Jan 20 2018       @Modified Date : Feb 05 2018 12:00
@@ -17,217 +17,233 @@
 -- @ID              :
 --
 ---------------------------------------------------------------------------------
-LIBRARY ieee;
-USE ieee.std_logic_1164.ALL;
-USE ieee.numeric_std.ALL;
-USE ieee.math_real.ALL;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+---------------------------------------------------------------------------------
+-- Entity declaration
+--------------------------------------------------------------------------------- 
+entity sc_counter is
+  port (
+    clk   : in std_logic;
+    reset : in std_logic;
+    enable: in std_logic;
+    x     : in std_logic;
+    y     : out integer
+  );
+end entity; 
+
+---------------------------------------------------------------------------------
+-- Architecture description
+---------------------------------------------------------------------------------
+architecture behavior of sc_counter is
+  signal count: integer;
+begin
+
+  process (clk, reset) is
+  begin
+    if reset = '1' then
+      count <= 0;
+    elsif rising_edge(clk) then
+      if enable = '1' then
+        if x = '1' then
+          count <= count + 1;
+        end if;
+      else
+        count <= 0;
+      end if;
+    end if;
+  end process;
+
+  y <= count;
+end behavior;
+
+---------------------------------------------------------------------------------
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.math_real.all;
+use work.conf.all;
+use work.tb_conf.all;
 
 entity sc_neuron is
   generic (
-    IN_SIZE : integer := 16);
+    IN_SIZE  : integer := 16);
   port(
-  	clk     : in std_logic;
-  	reset   : in std_logic;
-    clear   : in std_logic;
-  	enable  : in std_logic;
-    activ   : in std_logic;
-  	x       : in input_array(0 to IN_SIZE - 1);
-  	w       : in input_array(0 to IN_SIZE - 1);
-  	b       : in std_logic_vector(BIT_WIDTH-1 downto 0);
-    y       : out std_logic_vector(BIT_WIDTH-1 downto 0)
+  	clk      : in std_logic;
+  	reset    : in std_logic;
+    set_seed : in std_logic;
+  	enable   : in std_logic;
+    activ    : in std_logic;
+  	x        : in input_array(0 to IN_SIZE - 1);
+  	w        : in input_array(0 to IN_SIZE - 1);
+  	b        : in std_logic_vector(BIT_WIDTH-1 downto 0);
+    y        : out std_logic_vector(BIT_WIDTH-1 downto 0)
   );
 end sc_neuron;
 
 architecture rtl of sc_neuron is
 
-  component lfsr is
-    generic (
-      data_width : integer := 8);
+  component bin2sc is
+    generic ( IN_SIZE : integer := 8);
     port (
-      clk         : in  std_logic;
-      reset       : in  std_logic;
-      seed_in     : in  std_logic_vector(DATA_WIDTH-1 downto 0);
-      set_seed_in : in  std_logic;
-      enable_in   : in  std_logic;
-      lfsr_out    : out std_logic_vector(DATA_WIDTH-1 downto 0)
+      clk             : in std_logic;
+      reset           : in std_logic;
+      set_seed        : in std_logic;
+      enable_in       : in std_logic;
+      x               : in input_array(0 to IN_SIZE - 1);
+      w               : in input_array(0 to IN_SIZE - 1);
+      sc_x            : out std_logic_vector(0 to IN_SIZE - 1);
+      sc_w            : out std_logic_vector(0 to IN_SIZE - 1)
+    );
+  end component; 
+
+  component sc_mul is
+    port (
+      x1 : in std_logic;
+      x2 : in std_logic;
+      y  : out std_logic
     );
   end component;
 
-entity sc_mul is
-  port (
-    x1 : in std_logic;
-    x2 : in std_logic;
-    y  : out std_logic
-  );
-end entity; 
+  component sc_add is
+    port (
+      clk   : in std_logic;
+      reset : in std_logic;
+      x1    : in std_logic;
+      x2    : in std_logic;
+      sel   : in std_logic;
+      y     : out std_logic
+    );
+  end component;
 
+  component sc_sigmoid is
+    port (
+      clk    : in std_logic;
+      reset  : in std_logic;
+      enable : in std_logic;
+      input  : in std_logic_vector(SUM_WIDTH-1 downto 0);
+      output : out std_logic_vector(SC_WIDTH-1 downto 0)
+    );
+  end component;
 
+  component sc_relu is
+    port (
+      clk    : in std_logic;
+      reset  : in std_logic;
+      enable : in std_logic;
+      input  : in std_logic_vector(SUM_WIDTH-1 downto 0);
+      output : out std_logic_vector(SC_WIDTH-1 downto 0)
+    );
+  end component;
 
-  signal sc_x : std_logic_vector(0 to IN_SIZE - 1); 
-  signal sc_w : std_logic_vector(0 to IN_SIZE - 1); 
-  signal sc_b : std_logic; 
-  signal sc_y : std_logic; 
+  component lfsr is
+    generic (
+      DATA_WIDTH : integer := 8);
+    port (
+      clk       : in  std_logic;
+      reset     : in  std_logic;
+      set_seed  : in  std_logic;
+      seed_in   : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+      enable_in : in  std_logic;
+      lfsr_out  : out std_logic_vector(DATA_WIDTH-1 downto 0));
+  end component lfsr;
 
-  constant DATA_WIDTH : integer := 8;
+  signal sc_x    : std_logic_vector(0 to IN_SIZE - 1);
+  signal sc_w    : std_logic_vector(0 to IN_SIZE - 1);
+  signal sc_mult : std_logic_vector(0 to IN_SIZE - 1);
+  signal sc_sum  : std_logic;
 
-  type seed_in_t is array(integer range <>)
-    of std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal ctrl     : std_logic_vector(CTRL_WIDTH-1 downto 0);
+  signal sum      : unsigned(SUM_WIDTH-1 downto 0);
+  signal counter  : unsigned(SC_WIDTH-1 downto 0);
 
-  procedure init_seed_in (
-    type real_array is array (integer range <>) of real;
-    v_seed_in_x : out seed_in_t(0 to IN_SIZE - 1); 
-    v_seed_in_w : out seed_in_t(0 to IN_SIZE - 1); 
-    v_seed_in_y : out std_logic_vector(DATA_WIDTH-1 downto 0));
-  is
-    constant rand_num     : integer := IN_SIZE * 2 + 1;
-    variable seed1, seed2 : positive;
-    variable rand_x       : real_array(0 to IN_SIZE - 1);
-    variable rand_w       : real_array(0 to IN_SIZE - 1);
-    variable rand_b       : real;
+  signal v_x    : integer := 0;
+  signal v_w    : integer := 0;
+  signal v_mul  : integer := 0;
+  signal v_sum  : integer := 0;
+begin
+  -- For simulation
+  count1: entity work.sc_counter
+    port map (clk, reset, enable, sc_x(0), v_x);
+  count2: entity work.sc_counter
+    port map (clk, reset, enable, sc_w(0), v_w);
+  count3: entity work.sc_counter
+    port map (clk, reset, enable, sc_mult(0), v_mul);
+  count4: entity work.sc_counter
+    port map (clk, reset, enable, sc_sum, v_sum);
+
+  sum_count: process (clk, reset)
+    variable test_count : real := 1.0;
   begin
-    for i in 0 to IN_SIZE - 1 loop
-      uniform(seed1, seed2, rand_x(i));  -- random value in range 0.0 to 1.0
-      uniform(seed1, seed2, rand_w(i));  -- random value in range 0.0 to 1.0
-      rand_x(i) := (rand_x(i) * 2.0 - 1.0);  -- convert -1.0 to 1.0
-      rand_w(i) := (rand_w(i) * 2.0 - 1.0);  -- convert -1.0 to 1.0
-      v_seed_in_x(i) <=
-       std_logic_vector(to_signed(integer(rand_x(i)*2.0**DATA_WIDTH, DATA_WIDTH)))
-      v_seed_in_w(i) <=
-       std_logic_vector(to_signed(integer(rand_w(i)*2.0**DATA_WIDTH, DATA_WIDTH)))
-    end loop;
+    if reset = '1' then
+      sum     <= (others => '0');
+      counter <= (others => '0');
+    elsif rising_edge(clk) then
+      if set_seed = '1' then
+        -- sum <= (others => '0');
+        sum <= (SUM_WIDTH-SC_WIDTH-1 downto 0 => '0')
+             & unsigned(b);
+      elsif enable = '1' then
+        counter <= counter + 1;
+        if sc_sum = '1' then
+          sum <= sum + 1;
+        end if;
+      end if;
 
-    uniform(seed1, seed2, rand_b);  -- random value in range 0.0 to 1.0
-    rand_b := (rand_b * 2.0 - 1.0);  -- convert -1.0 to 1.0
-    v_seed_in_b <=
-     std_logic_vector(to_signed(integer(rand_b*2.0**DATA_WIDTH, DATA_WIDTH)))
-  end procedure;
+      if activ = '1' then
+        test_count := test_count + 1.0;
+        -- print("x_sc   = " & real'image(real(v_x)/2.0**(SC_WIDTH-1)-1.0));
+        -- print("w_sc   = " & real'image(real(v_w)/2.0**(SC_WIDTH-1)-1.0));
+        -- print("mul_sc = " & real'image(real(v_mul)/2.0**(SC_WIDTH-1)-1.0));
+        print("b_sc     = " & real'image(real(to_integer(unsigned(b)))/2.0**(SC_WIDTH-1)-1.0));
+        print("sum_sc   = " & real'image(real(v_sum)/2.0**(SC_WIDTH-1)-1.0));
+        print("sum+b_sc = " & real'image(real(to_integer(sum))/2.0**(SC_WIDTH-1)-test_count));
+        -- print("counter = " & integer'image(to_integer(counter)));
+      end if;
+    end if;
+  end process;
 
-  signal seed_in_x : seed_in_t(0 to IN_SIZE - 1);
-  signal seed_in_w : seed_in_t(0 to IN_SIZE - 1);
-  signal seed_in_b : std_logic_vector(DATA_WIDTH-1 downto 0);
-
-  signal sc_counter    : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
-  signal sc_counter_in : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
-
-  signal sum_tmp : std_logic;
-  signal sum
-begin  -- architecture beh
-
-  for i in 0 to IN_SIZE - 1 generate
-    sng_x: lfsr
-    generic map (
-      DATA_WIDTH => DATA_WIDTH)
-    port map (
-      clk         => clk,
-      reset       => reset,
-      set_seed_in => set_seed_in,
-      seed_in     => seed_in_x(i),
-      enable_in   => enable_in,
-      lfsr_out    => sc_x(i)
-    );
-    sng_w: lfsr
-    generic map (
-      DATA_WIDTH => DATA_WIDTH)
-    port map (
-      clk         => clk,
-      reset       => reset,
-      set_seed_in => set_seed_in,
-      seed_in     => seed_in_w(i),
-      enable_in   => enable_in,
-      lfsr_out    => sc_w(i)
-    );
+  mult_i: for i in 0 to IN_SIZE - 1 generate
+      sc_mult(i) <= sc_x(i) xnor sc_w(i);
   end generate;
 
-  sng_b: lfsr
-  generic map (
-    DATA_WIDTH => DATA_WIDTH)
-  port map (
-    clk         => clk,
-    reset       => reset,
-    set_seed_in => set_seed_in,
-    seed_in     => seed_in_b,
-    enable_in   => enable_in,
-    lfsr_out    => sc_b
-  );
+  sc_sum <= sc_mult(to_integer(unsigned(ctrl(3 downto 0))));
 
-  reg: process (clk, reset) is
-  begin
-    if reset = '1' then        
-      sc_counter <= (others => '0'); 
-      init_seed_in(seed_in_x, seed_in_w, seed_in_b);
-    elsif rising_edge(clk) then
-      sc_counter <= sc_counter_in;
-    end if;
-  end reg;
+  bin2sc_i: bin2sc
+    generic map(
+      IN_SIZE => IN_SIZE
+    )
+    port map (
+      clk         => clk,
+      reset       => reset,
+      set_seed    => set_seed,
+      enable_in   => enable,
+      x           => x,
+      w           => w,
+      sc_x        => sc_x,
+      sc_w        => sc_w
+    );
 
-  sc_counter_in <= sc_counter;
+  lfsr_ctrl: lfsr
+    generic map (
+      DATA_WIDTH  => CTRL_WIDTH
+    )
+    port map (
+      clk         => clk,
+      reset       => reset,
+      set_seed    => set_seed,
+      seed_in     => std_logic_vector(to_unsigned(314, CTRL_WIDTH)),
+      enable_in   => enable,
+      lfsr_out    => ctrl);
 
+  activation_function: sc_relu
+    port map(
+      clk    => clk,
+      reset  => reset,
+      enable => activ,
+      input  => std_logic_vector(sum),
+      output => y);
 
-  in  -- stochastic multiplication in bipolar domain
-  sc_mul1 <= sc_input1 xnor sc_weight1;
-  sc_mul2 <= sc_input2 xnor sc_weight2;
-
-  sc_ctrl1 <= sc_mul1 xor sc_mul2;
-  sc_ctrl2 <= sc_ctrl1;
-  sc_ctrl3 <= sc_add1 xor sc_add2;
-
-  tff: process (clk, rst_n) is
-  begin  -- process sc_counter_proc
-    if rst_n = '0' then                 -- asynchronous reset (active low)
-        q_tff1 <= '0';
-        q_tff2 <= '0';
-        q_tff3 <= '0';
-    elsif rising_edge(clk) then         -- rising clock edge
-        q_tff1 <= sc_ctrl1 xor q_tff1;
-        q_tff2 <= sc_ctrl2 xor q_tff2;
-        q_tff3 <= sc_ctrl3 xor q_tff3;
-    end if;
-  end process tff;
-
-  sc_add1 <= q_tff1 when sc_ctrl1 = '1' else sc_mul1;
-  sc_add2 <= q_tff2 when sc_ctrl2 = '1' else sc_bias;
-  result   <= q_tff3 when sc_ctrl3 = '1' else sc_add2;
-  result_out <= std_logic_vector(result_counter);
-
-  count: process (clk, rst_n) is
-  begin  -- process convert_proc
-    if rst_n = '0'then
-        counter <= (others => (others => '0'));
-        count_out <= (others => (others => '0'));
-    elsif rising_edge(clk) then         -- rising clock edge
-        if enable = '1' then
-            if sc_input1 = '1' then
-                counter(0) <= counter(0) + 1;
-            end if;
-            if sc_input2 = '1' then
-                counter(1) <= counter(1) + 1;
-            end if;
-            if sc_weight1 = '1' then
-                counter(2) <= counter(2) + 1;
-            end if;
-            if sc_weight2 = '1' then
-                counter(3) <= counter(3) + 1;
-            end if;
-            if sc_bias = '1' then
-                counter(4) <= counter(4) + 1;
-            end if;
-
-            if sc_mul1 = '1' then
-                count_out(0) <= count_out(0) + 1;
-            end if;
-            if sc_mul2 = '1' then
-                count_out(1) <= count_out(1) + 1;
-            end if;
-            if sc_add1 = '1' then
-                count_out(2) <= count_out(2) + 1;
-            end if;
-            if sc_add2 = '1' then
-                count_out(3) <= count_out(3) + 1;
-            end if;
-        else
-            counter <= (others => (others => '0'));
-            count_out <= (others => (others => '0'));
-        end if;
-    end if;
-  end process count;
 end architecture rtl;
