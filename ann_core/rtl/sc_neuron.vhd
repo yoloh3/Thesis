@@ -63,9 +63,11 @@ end behavior;
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use ieee.math_real.all;
 use work.conf.all;
+--pragma synthesis_off
 use work.tb_conf.all;
+use ieee.math_real.all;
+--pragma synthesis_on
 
 entity sc_neuron is
   generic (
@@ -95,6 +97,7 @@ architecture rtl of sc_neuron is
       x               : in input_array(0 to IN_SIZE - 1);
       w               : in input_array(0 to IN_SIZE - 1);
       sc_x            : out std_logic_vector(0 to IN_SIZE - 1);
+      sc_0_5          : out std_logic;
       sc_w            : out std_logic_vector(0 to IN_SIZE - 1)
     );
   end component; 
@@ -159,11 +162,15 @@ architecture rtl of sc_neuron is
   signal sum      : unsigned(SUM_WIDTH-1 downto 0);
   signal counter  : unsigned(SC_WIDTH-1 downto 0);
 
+  --pragma synthesis_off
   signal v_x    : integer := 0;
   signal v_w    : integer := 0;
   signal v_mul  : integer := 0;
   signal v_sum  : integer := 0;
+--pragma synthesis_on
 begin
+
+  --pragma synthesis_off
   -- For simulation
   count1: entity work.sc_counter
     port map (clk, reset, enable, sc_x(0), v_x);
@@ -173,9 +180,12 @@ begin
     port map (clk, reset, enable, sc_mult(0), v_mul);
   count4: entity work.sc_counter
     port map (clk, reset, enable, sc_sum, v_sum);
+--pragma synthesis_on
 
   sum_count: process (clk, reset)
+    --pragma synthesis_off
     variable test_count : real := 1.0;
+    --pragma synthesis_on
   begin
     if reset = '1' then
       sum     <= (others => '0');
@@ -192,16 +202,18 @@ begin
         end if;
       end if;
 
+      --pragma synthesis_off
       if activ = '1' then
         test_count := test_count + 1.0;
-        -- print("x_sc   = " & real'image(real(v_x)/2.0**(SC_WIDTH-1)-1.0));
-        -- print("w_sc   = " & real'image(real(v_w)/2.0**(SC_WIDTH-1)-1.0));
-        -- print("mul_sc = " & real'image(real(v_mul)/2.0**(SC_WIDTH-1)-1.0));
+        print("x1_sc    = " & real'image(real(v_x)/2.0**(SC_WIDTH-1)-1.0));
+        print("w1_sc    = " & real'image(real(v_w)/2.0**(SC_WIDTH-1)-1.0));
         print("b_sc     = " & real'image(real(to_integer(unsigned(b)))/2.0**(SC_WIDTH-1)-1.0));
-        print("sum_sc   = " & real'image(real(v_sum)/2.0**(SC_WIDTH-1)-1.0));
-        print("sum+b_sc = " & real'image(real(to_integer(sum))/2.0**(SC_WIDTH-1)-test_count));
-        -- print("counter = " & integer'image(to_integer(counter)));
+        print("x1*w1_sc = " & real'image(real(v_mul)/2.0**(SC_WIDTH-1)-1.0));
+        -- print("sum_sc   = " & real'image(real(v_sum)/2.0**(SC_WIDTH-1)-1.0));
+        -- print("sum+b_sc = " & real'image(real(to_integer(sum))/2.0**(SC_WIDTH-1)-test_count));
       end if;
+      --pragma synthesis_on
+
     end if;
   end process;
 

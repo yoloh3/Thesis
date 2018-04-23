@@ -48,15 +48,17 @@ begin
   begin
     if reset = '1' then
       out_tmp <= VAL_0_5(SC_WIDTH-1 downto 0);
-    elsif rising_edge(clk) AND (enable = '1') then
-      numeric_val := (unsigned(input) - MINUS) sll 4;
+    elsif rising_edge(clk) then
+      if (enable = '1') then
+        numeric_val := (unsigned(input) - MINUS) sll 4;
 
-      if numeric_val > VAL_1 then
-        out_tmp <= VAL_1(SC_WIDTH-1 downto 0);
-      elsif numeric_val > VAL_0_5 then
-        out_tmp <= numeric_val(SC_WIDTH-1 downto 0);
-      else
-        out_tmp <= VAL_0_5(SC_WIDTH-1 downto 0);
+        if numeric_val > VAL_1 then
+          out_tmp <= VAL_1(SC_WIDTH-1 downto 0);
+        elsif numeric_val > VAL_0_5 then
+          out_tmp <= numeric_val(SC_WIDTH-1 downto 0);
+        else
+          out_tmp <= VAL_0_5(SC_WIDTH-1 downto 0);
+        end if;
       end if;
     end if;
   end process;
