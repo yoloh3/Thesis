@@ -128,8 +128,8 @@ architecture behavior of bin2sc is
     := std_logic_vector(to_signed(integer(0.5*2.0**SC_WIDTH), SC_WIDTH));
   
 begin
-  sng: for i in 0 to IN_SIZE - 1 generate
-    sng_x: lfsr
+  lfsr_sng_x: for i in 0 to IN_SIZE - 1 generate
+    lfsr_sng_x_i: lfsr
     generic map (
       DATA_WIDTH => SC_WIDTH)
     port map (
@@ -140,9 +140,8 @@ begin
       enable_in   => enable_in,
       lfsr_out    => lfsr_x(i)
     );
-    sc_x(i) <= '1' when unsigned(lfsr_x(i)) < unsigned(x(i)) else '0';
 
-    sng_w: lfsr
+    lfsr_sng_w_i: lfsr
     generic map (
       DATA_WIDTH => SC_WIDTH)
     port map (
@@ -153,21 +152,48 @@ begin
       enable_in   => enable_in,
       lfsr_out    => lfsr_w(i)
     );
-    sc_w(i) <= '1' when unsigned(lfsr_w(i)) < unsigned(w(i)) else '0';
   end generate;
 
-    sng_0_5: lfsr
-    generic map (
-      DATA_WIDTH => SC_WIDTH)
-    port map (
-      clk         => clk,
-      reset       => reset,
-      set_seed    => set_seed,
-      seed_in     => seed_0_5,
-      enable_in   => enable_in,
-      lfsr_out    => lfsr_0_5 
-    );
-    sc_0_5 <= '1' when unsigned(lfsr_0_5) < unsigned(val_0_5) else '0';
+  lfsr_sng_0_5: lfsr
+  generic map (
+    DATA_WIDTH => SC_WIDTH)
+  port map (
+    clk         => clk,
+    reset       => reset,
+    set_seed    => set_seed,
+    seed_in     => seed_0_5,
+    enable_in   => enable_in,
+    lfsr_out    => lfsr_0_5 
+  );
+
+  sng: process (clk, reset)
+  begin
+    if reset = '1' then
+      sc_x   <= (others => '0');
+      sc_w   <= (others => '0');
+      sc_0_5 <= '0';
+    elsif rising_edge(clk) then
+      for i in 0 to IN_SIZE - 1 loop
+        if unsigned(lfsr_x(i)) < unsigned(x(i)) then
+          sc_x(i) <= '1';
+        else 
+          sc_x(i) <= '0';
+        end if;
+
+        if unsigned(lfsr_w(i)) < unsigned(w(i)) then
+          sc_w(i) <= '1';
+        else 
+          sc_w(i) <= '0';
+        end if;
+      end loop;
+
+      if unsigned(lfsr_0_5) < unsigned(val_0_5) then
+        sc_0_5 <= '1';
+      else 
+        sc_0_5 <= '0';
+      end if;
+
+    end if;
+  end process;
 
 end behavior;
-
