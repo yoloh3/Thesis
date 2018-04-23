@@ -26,14 +26,14 @@ use ieee.numeric_std.all;
 
 entity lfsr is
   generic (
-    data_width : integer := 8);
+    DATA_WIDTH : integer := 8);
   port (
-    clk         : in  std_logic;
-    reset       : in  std_logic;
-    set_seed_in : in  std_logic;
-    seed_in     : in  std_logic_vector(data_width-1 downto 0);
-    enable_in   : in  std_logic;
-    lfsr_out    : out std_logic_vector(data_width-1 downto 0));
+    clk       : in  std_logic;
+    reset     : in  std_logic;
+    set_seed  : in  std_logic;
+    seed_in   : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+    enable_in : in  std_logic;
+    lfsr_out  : out std_logic_vector(DATA_WIDTH-1 downto 0));
 end entity lfsr;
 
 
@@ -218,29 +218,32 @@ architecture beh of lfsr is
       (2, 167, 161, 0, 0, 0, 0),        -- 167
       (4, 168, 166, 153, 151, 0, 0)     -- 168
       );
-  signal lfsr_reg        : std_logic_vector(data_width - 1 downto 0);
+  signal lfsr_reg        : std_logic_vector(DATA_WIDTH - 1 downto 0);
   signal lfsr_feedback   : std_logic;
-  signal feedback_vector : std_logic_vector(lfsr_taps(data_width)(0)-1 downto 0);
+  signal feedback_vector : std_logic_vector(lfsr_taps(DATA_WIDTH)(0)-1 downto 0);
 begin  -- architecture beh
 
-  feedback_gen : for i in 0 to lfsr_taps(data_width)(0)-1 generate
-    feedback_vector(i) <= lfsr_reg(lfsr_taps(data_width)(i+1)-1);
+  feedback_gen : for i in 0 to lfsr_taps(DATA_WIDTH)(0)-1 generate
+    feedback_vector(i) <= lfsr_reg(lfsr_taps(DATA_WIDTH)(i+1)-1);
   end generate feedback_gen;
 
   lfsr_feedback <= xnor(feedback_vector);
 
   lfsr_proc : process (clk, reset) is
   begin  -- process lfsr_proc
-    if reset = '1' then                 -- asynchronous reset (active low)
+    if reset = '1' then
       lfsr_reg <= (others => '0');
-    elsif rising_edge(clk) then         -- rising clock edge
-      if set_seed_in = '1' then
+    elsif rising_edge(clk) then
+      --pragma synthesis_off
+      assert nand(seed_in)
+        report "illegal seed value" severity failure;
+      --pragma synthesis_on
+
+      if enable_in = '1' then
+        lfsr_reg <= lfsr_reg(DATA_WIDTH-2 downto 0)
+                  & lfsr_feedback;
+      elsif set_seed = '1' then
         lfsr_reg <= seed_in;
-        --pragma synthesis_off
-        assert nand(seed_in) report "illegal seed value" severity failure;
-        --pragma synthesis_on
-      elsif enable_in = '1' then
-        lfsr_reg <= lfsr_reg(data_width-2 downto 0) & lfsr_feedback;
       end if;
     end if;
   end process lfsr_proc;
