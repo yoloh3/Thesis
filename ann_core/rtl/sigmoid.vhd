@@ -38,91 +38,91 @@ entity sigmoid is
   );
 end sigmoid;
 
-architecture LUT_funct of sigmoid is
-  function sigmoid_funct(input: real) return real is
-  begin
-      return 1.0 / (1.0 + exp(-input));
-  end function;
-
-  function real_to_stdlv (
-    constant real_val : real;
-    constant size     : integer;
-    constant fract    : integer 
-  )
-  return std_logic_vector is
-    variable max_val : real;
-  begin
-    max_val := real(2**FRACT);
-    return std_logic_vector(to_signed(integer(real_val*max_val), size));
-  end function real_to_stdlv;
-
-  -- IF tanh(): output.range=fraction bit + 1 (sign bit)
-  constant DEPTH : integer := 2**BIT_WIDTH;
-  type mem_type is array(0 to DEPTH - 1)
-    of std_logic_vector(FRACTION - 1 downto 0);
-
-  function init_mem return mem_type is
-    variable temp_mem : mem_type;
-    variable input_real : real := 0.0;
-    variable counter  : integer := 1;
-  begin
-    for i in 0 to DEPTH - 1 loop
-      input_real := (real(i) / 2.0**(FRACTION) - 1.0);
-
-      temp_mem(i) :=
-        real_to_stdlv(sigmoid_funct(input_real), FRACTION, FRACTION);
-      end loop;
-      return temp_mem;
-  end function;
-
-    signal mem: mem_type := init_mem;
-begin
-  process (reset, clk) is
-    variable output_tmp : std_logic_vector(FRACTION - 1 downto 0);
-  begin
-    if reset = '1' then
-      output <= (others => '0');
-    elsif rising_edge(clk) then
-      if (enable = '1') then
-        output_tmp := mem(to_integer(unsigned(input)));
-        output <= (BIT_WIDTH - FRACTION - 1 downto 0 => '0' )
-                 & output_tmp;
-        end if;
-    end if;
-  end process;
-end LUT_funct;
-
--- architecture behav of sigmoid is
+-- architecture LUT_funct of sigmoid is
   -- function sigmoid_funct(input: real) return real is
   -- begin
       -- return 1.0 / (1.0 + exp(-input));
   -- end function;
 
--- begin
-  -- process (reset, clk) is
-    -- variable out_real : real;
+  -- function real_to_stdlv (
+    -- constant real_val : real;
+    -- constant size     : integer;
+    -- constant fract    : integer
+  -- )
+  -- return std_logic_vector is
+    -- variable max_val : real;
+  -- begin
+    -- max_val := real(2**FRACT);
+    -- return std_logic_vector(to_signed(integer(real_val*max_val), size));
+  -- end function real_to_stdlv;
+
+  -- -- IF tanh(): output.range=fraction bit + 1 (sign bit)
+  -- constant DEPTH : integer := 2**BIT_WIDTH;
+  -- type mem_type is array(0 to DEPTH - 1)
+    -- of std_logic_vector(FRACTION - 1 downto 0);
+
+  -- function init_mem return mem_type is
+    -- variable temp_mem : mem_type;
+    -- variable input_real : real := 0.0;
     -- variable counter  : integer := 1;
   -- begin
+    -- for i in 0 to DEPTH - 1 loop
+      -- input_real := (real(i) / 2.0**(FRACTION) - 1.0);
 
+      -- temp_mem(i) :=
+        -- real_to_stdlv(sigmoid_funct(input_real), FRACTION, FRACTION);
+      -- end loop;
+      -- return temp_mem;
+  -- end function;
+
+    -- signal mem: mem_type := init_mem;
+-- begin
+  -- process (reset, clk) is
+    -- variable output_tmp : std_logic_vector(FRACTION - 1 downto 0);
+  -- begin
     -- if reset = '1' then
-        -- output <= (others => '0');
+      -- output <= (others => '0');
     -- elsif rising_edge(clk) then
       -- if (enable = '1') then
-        -- out_real := sigmoid_funct(real(to_integer(signed(input))) / 2.0**FRACTION);
-        -- output <= std_logic_vector(to_signed(integer(out_real * 2.0**FRACTION), BIT_WIDTH));
-
-        -- --pragma synthesis_off
-        -- -- print("Sigmoid out(" & integer'image(counter mod (NEURONS_N) ) & ") = "
-             -- -- & real'image(out_real) & "  =>  "
-             -- -- & integer'image((integer(out_real*2.0**FRACTION))));
-        -- --pragma synthesis_on
-
-        -- counter := counter + 1;
-      -- end if;
+        -- output_tmp := mem(to_integer(unsigned(input)));
+        -- output <= (BIT_WIDTH - FRACTION - 1 downto 0 => '0' )
+                 -- & output_tmp;
+        -- end if;
     -- end if;
   -- end process;
+-- end LUT_funct;
 
--- end behav;
+architecture behav of sigmoid is
+  function sigmoid_funct(input: real) return real is
+  begin
+      return 1.0 / (1.0 + exp(-input));
+  end function;
+
+begin
+  process (reset, clk) is
+    variable out_real : real;
+    variable counter  : integer := 1;
+  begin
+
+    if reset = '1' then
+        output <= (others => '0');
+    elsif rising_edge(clk) then
+      if (enable = '1') then
+        out_real := sigmoid_funct(real(to_integer(signed(input))) / 2.0**FRACTION);
+        output <= std_logic_vector(to_signed(integer(out_real * 2.0**FRACTION), BIT_WIDTH));
+
+        --pragma synthesis_off
+        -- print("Sigmoid out(" & integer'image(counter mod (NEURONS_N) ) & ") = "
+             -- & real'image(out_real) & "  =>  "
+             -- & integer'image((integer(out_real*2.0**FRACTION))));
+        --pragma synthesis_on
+
+        counter := counter + 1;
+      end if;
+    end if;
+  end process;
+
+end behav;
 
 
 -- architecture LUT of sigmoid is

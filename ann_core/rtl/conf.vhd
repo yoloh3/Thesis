@@ -24,14 +24,14 @@ package conf is
   -- constants
   constant SYNTHESIS    : integer := 0;
 
-  constant NUM_OF_TESTS : integer := 1;
-  constant BIT_WIDTH    : integer := 10;
+  constant NUM_OF_TESTS : integer := 100;
+  constant BIT_WIDTH    : integer := 8;
   constant FRACTION     : integer := 4;
 
-   constant SC_WIDTH     : integer := BIT_WIDTH;
-   constant SC_DELAY     : integer := 2**SC_WIDTH-1;
- -- constant SC_WIDTH      : integer := 0;
- -- constant SC_DELAY      : integer := 1;
+   -- constant SC_WIDTH     : integer := BIT_WIDTH;
+   -- constant SC_DELAY     : integer := 2**SC_WIDTH-1;
+ constant SC_WIDTH      : integer := 0;
+ constant SC_DELAY      : integer := 1;
 
   constant PARALLEL_RATE : integer := 16;
   constant CTRL_WIDTH    : integer := 4;

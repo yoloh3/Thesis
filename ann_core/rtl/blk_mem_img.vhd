@@ -46,7 +46,7 @@ end entity;
 ---------------------------------------------------------------------------------
 architecture behavior of blk_mem_img is
   constant DEPTH     : integer := INPUTS_N * NUM_OF_TESTS;
-  constant file_name : string := "../../ann_core/tb/input.bin";
+  constant file_name : string := "../tb/input.bin";
 
   impure function init_ram return input_array is
     variable ram_tmp : input_array(0 to DEPTH - 1);

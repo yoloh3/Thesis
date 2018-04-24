@@ -29,7 +29,7 @@ top_module: init
 			 $(RTL_DIR)/controller.vhd \
 			 $(RTL_DIR)/top_module.vhd \
 			 $(TB_DIR)/top_module_tb.vhd
-	vsim $(VSIM_OPT) -novopt -wlf top_module.wlf top_module_tb \
+	vsim $(VSIM_OPT) top_module_tb \
 		$(TCL_ENAB) -do "run -a; exit;"
 
 run:

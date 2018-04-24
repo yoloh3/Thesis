@@ -66,6 +66,16 @@ component sigmoid is
   );
 end component;
 
+component relu is
+  port (
+    clk    : in std_logic;
+    reset  : in std_logic;
+    enable : in std_logic;
+    input  : in std_logic_vector(BIT_WIDTH-1 downto 0);
+    output : out std_logic_vector(BIT_WIDTH-1 downto 0)
+  );
+end component;
+
 begin
 
   b_tmp <= (BIT_WIDTH-FRACTION-1 downto 0 => b(BIT_WIDTH - 1))
@@ -111,14 +121,16 @@ begin
   truncation: process (sum) is
     variable mult_t : sfixed(2*(BIT_WIDTH-FRACTION)-1 downto -2*FRACTION);
     variable out_t  : sfixed(BIT_WIDTH-FRACTION-1 downto -FRACTION);
+    constant max_val : integer := 2**(BIT_WIDTH-FRACTION-1)-1;
+    constant min_val : integer := -2**(BIT_WIDTH-FRACTION-1);
   begin
     -- detect overflow when truncating
-    if sum >= signed(to_sfixed(MEM_I_N-1, mult_t)) then
+    if sum >= signed(to_sfixed(max_val, mult_t)) then
       overflow <= '1';
-      trunc_sum <= signed(to_sfixed(MEM_I_N-1, out_t));
-    elsif sum < signed(to_sfixed(-MEM_I_N, mult_t)) then
+      trunc_sum <= signed(to_sfixed(max_val, out_t));
+    elsif sum < signed(to_sfixed(min_val, mult_t)) then
       overflow <= '1';
-      trunc_sum <= signed(to_sfixed(-MEM_I_N, out_t));
+      trunc_sum <= signed(to_sfixed(min_val, out_t));
     else
       overflow <= '0';
       trunc_sum <= sum(BIT_WIDTH+FRACTION-1 downto FRACTION);

@@ -7,3 +7,5 @@
 *.obj
 *.out
 svn/
+*sim/
+*doc/

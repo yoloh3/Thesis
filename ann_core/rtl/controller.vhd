@@ -74,6 +74,8 @@ architecture behavioral of controller is
   signal calc_count     : integer := 0;
   signal calc_count_in  : integer := 0;
   constant max_count    : integer := 1;
+  signal input_addr_init  : std_logic_vector(MEM_I_N-1 downto 0) := (others => '0');
+  signal input_addr_init_in : std_logic_vector(MEM_I_N-1 downto 0) := (others => '0');
 
 begin
 
@@ -92,6 +94,7 @@ begin
       neuron_counter <= neuron_counter_in;
       layer_counter  <= layer_counter_in;
       input_address  <= input_address_in;
+      input_addr_init     <= input_addr_init_in;
       weight_address <= weight_address_in;
       bias_address   <= bias_address_in;
       result_address <= result_address_in;
@@ -165,7 +168,8 @@ begin
 
   control : process (current_state, neuron_counter, input_counter, calc_count, 
                       layer_counter, input_address, weight_address, bias_address,
-                      result_address, wb_address, num_of_inputs, num_of_neurons)
+                      result_address, wb_address, num_of_inputs, num_of_neurons,
+                    input_addr_init)
   begin
 
       read_ena    <= '0';
@@ -183,6 +187,7 @@ begin
       input_counter_in  <= input_counter;
       layer_counter_in  <= layer_counter;
       input_address_in  <= input_address;
+      input_addr_init_in     <= input_addr_init;
       weight_address_in <= weight_address;
       result_address_in <= result_address;
       wb_address_in     <= wb_address;
@@ -206,7 +211,8 @@ begin
           neuron_counter_in <= 0;
           input_counter_in  <= 0;
           layer_counter_in  <= 0;
-          input_address_in  <= (others => '0');
+          input_address_in  <= input_addr_init + INPUTS_N;
+          input_addr_init_in  <= input_addr_init + INPUTS_N;
           weight_address_in <= (others => '0');
           bias_address_in   <= (others => '0');
           result_address_in <= (others => '0');
@@ -292,7 +298,7 @@ begin
           -- increment neuron counter, reset input counter and image address
           neuron_counter_in <= neuron_counter + 1;
           input_counter_in <= 0;
-          input_address_in <= (others => '0');
+          input_address_in <= input_addr_init;
           if layer_counter > 0 then
               result_address_in <= (others => '0');
           end if;
