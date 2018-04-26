@@ -85,32 +85,27 @@ begin
       -- writeline(myfile, oline);
 
       print("Run test:");
-			wait for period;
-			push_button(0) <= '1';
-      wait until fnish = '1';
 
-      actual_out(0) := to_integer(unsigned(max_index) - 1);
-      if actual_out(0) = expected_out(0) then
-        correct_num := correct_num + 1;
-      end if;
-      print("1");
-
-      for i in 1 to NUM_OF_TESTS - 1 loop
-        print(integer'image(i+1) & " ");
-        push_button(0) <= '0';
-        push_button(1) <= '1';
-        wait for period;
+      for i in 0 to NUM_OF_TESTS - 1 loop
         push_button(0) <= '1';
         wait until fnish = '1';
         actual_out(i) := to_integer(unsigned(max_index) - 1);
         if actual_out(i) = expected_out(i) then
           correct_num := correct_num + 1;
+          print("Test #" & integer'image(i+1) & " correct: " & integer'image(actual_out(i)));
+        else
+          print("Test #" & integer'image(i+1) & " wrong: guessed: " &
+                integer'image(actual_out(i)) &
+                " expected: " & integer'image(expected_out(i)));
         end if;
+        push_button(0) <= '0';
+        push_button(1) <= '1';
+        wait for period;
       end loop;
 
       print("Classification: "
-           & integer'image(correct_num)
-           & "/" & integer'image(NUM_OF_TESTS));
+            & integer'image(correct_num)
+            & "/" & integer'image(NUM_OF_TESTS));
 
       finish(1);
 		end process;
