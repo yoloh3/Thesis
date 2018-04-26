@@ -18,13 +18,14 @@
 ---------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
--- library xil_defaultlib;
--- use xil_defaultlib.conf.all;
 library ieee;
 use ieee.fixed_pkg.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_signed.all;
 use work.conf.all;
+--pragma synthesis_off
+use work.tb_conf.all;
+--pragma synthesis_on
 
 entity neuron is
   generic (
@@ -109,8 +110,15 @@ begin
     if reset = '1' then
       sum_tmp <= (others => '0');
     elsif (rising_edge(clk)) then
+        -- for i in 0 to IN_SIZE - 1 loop
+        -- print("    weight(" & integer'image(i) & ") = " &
+        -- real'image(real(conv_integer(signed((w(i)))))/2.0**FRACTION));
+        -- end loop;
       if (clear = '1') then
         sum_tmp <= (others => '0');
+        -- print("    bias = " &
+        -- real'image(real(conv_integer(signed((b))))/2.0**FRACTION)
+        -- & "       " & integer'image(conv_integer(signed(b))));
       elsif (enable = '1') then
         sum_tmp <= sum_in + sum_of_mult;
       end if;
@@ -127,9 +135,12 @@ begin
     -- detect overflow when truncating
     if sum >= signed(to_sfixed(max_val, mult_t)) then
       overflow <= '1';
+      report "Maximum sum" severity warning;
       trunc_sum <= signed(to_sfixed(max_val, out_t));
     elsif sum < signed(to_sfixed(min_val, mult_t)) then
       overflow <= '1';
+      report "Minimum sum" severity warning;
+      trunc_sum <= signed(to_sfixed(max_val, out_t));
       trunc_sum <= signed(to_sfixed(min_val, out_t));
     else
       overflow <= '0';
@@ -137,7 +148,7 @@ begin
     end if;
   end process;
 
-  activation_function: sigmoid
+  activation_function: relu
     port map(clk    => clk,
              reset  => reset,
              enable => activ,

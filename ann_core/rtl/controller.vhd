@@ -52,8 +52,8 @@ architecture behavioral of controller is
   signal current_state, next_state : state := idle_state;
 
   signal next_neuron, nlayer, validate, idle, done, ready      : std_logic := '0';
-  signal input_counter, neuron_counter, layer_counter          : integer := 0;
-  signal input_counter_in, neuron_counter_in, layer_counter_in : integer := 0;
+  signal input_counter, neuron_counter, layer_counter          : integer   := 0;
+  signal input_counter_in, neuron_counter_in, layer_counter_in : integer   := 0;
 
   -- input address starts from 0, so it would skip first input and use bias 1 instead
   signal input_address  : std_logic_vector(MEM_I_N-1 downto 0) := (others => '0');
@@ -69,38 +69,40 @@ architecture behavioral of controller is
   signal wb_address    : std_logic_vector(MEM_R_N-1 downto 0) := (others => '0');
   signal wb_address_in : std_logic_vector(MEM_R_N-1 downto 0) := (others => '0');
 
-  signal num_of_inputs  : integer := INPUTS_N / PARALLEL_RATE - 1; -- number of inputs go in
-  signal num_of_neurons : integer := NEURONS_N - 1;                -- number of neuron in current layer
-  signal calc_count     : integer := 0;
-  signal calc_count_in  : integer := 0;
-  constant max_count    : integer := 1;
-  signal input_addr_init  : std_logic_vector(MEM_I_N-1 downto 0) := (others => '0');
+  signal num_of_inputs      : integer := INPUTS_N / PARALLEL_RATE - 1; -- number of inputs go in
+  signal num_of_neurons     : integer := NEURONS_N - 1;                -- number of neuron in current layer
+  signal calc_count         : integer := 0;
+  signal calc_count_in      : integer := 0;
+  constant max_count        : integer := 1;
+  signal input_addr_init    : std_logic_vector(MEM_I_N-1 downto 0) := (others => '0');
   signal input_addr_init_in : std_logic_vector(MEM_I_N-1 downto 0) := (others => '0');
-
+  signal index              : std_logic_vector(9 downto 0);
 begin
 
   mem_i_adr    <= input_address;
   mem_w_adr    <= weight_address;
   mem_b_adr    <= bias_address;
   mem_r_adr    <= result_address;
-  neuron_index <= std_logic_vector(to_unsigned(neuron_counter + 1, neuron_index'length));
+  index        <= std_logic_vector(to_unsigned(neuron_counter+1,
+                      index'length));
+  neuron_index <= index(3 downto 0);
 
   state_change : process(clk)
   begin
     if rising_edge(clk) then
       current_state  <= next_state;
 
-      input_counter  <= input_counter_in;
-      neuron_counter <= neuron_counter_in;
-      layer_counter  <= layer_counter_in;
-      input_address  <= input_address_in;
-      input_addr_init     <= input_addr_init_in;
-      weight_address <= weight_address_in;
-      bias_address   <= bias_address_in;
-      result_address <= result_address_in;
-      wb_address     <= wb_address_in;
-      calc_count     <= calc_count_in;
-      finish         <= done;
+      input_counter   <= input_counter_in;
+      neuron_counter  <= neuron_counter_in;
+      layer_counter   <= layer_counter_in;
+      input_address   <= input_address_in;
+      input_addr_init <= input_addr_init_in;
+      weight_address  <= weight_address_in;
+      bias_address    <= bias_address_in;
+      result_address  <= result_address_in;
+      wb_address      <= wb_address_in;
+      calc_count      <= calc_count_in;
+      finish          <= done;
     end if;
   end process;
 
@@ -183,14 +185,14 @@ begin
       next_neuron <= '0';
       done        <= '0';
 
-      neuron_counter_in <= neuron_counter;
-      input_counter_in  <= input_counter;
-      layer_counter_in  <= layer_counter;
-      input_address_in  <= input_address;
-      input_addr_init_in     <= input_addr_init;
-      weight_address_in <= weight_address;
-      result_address_in <= result_address;
-      wb_address_in     <= wb_address;
+      neuron_counter_in   <= neuron_counter;
+      input_counter_in    <= input_counter;
+      layer_counter_in    <= layer_counter;
+      input_address_in    <= input_address;
+      input_addr_init_in  <= input_addr_init;
+      weight_address_in   <= weight_address;
+      result_address_in   <= result_address;
+      wb_address_in       <= wb_address;
 
 
       case current_state is
@@ -206,28 +208,28 @@ begin
           activate          <= '0';
 
         when reinit_state =>
-          num_of_inputs     <= INPUTS_N / PARALLEL_RATE - 1;
-          num_of_neurons    <= NEURONS_N - 1;
-          neuron_counter_in <= 0;
-          input_counter_in  <= 0;
-          layer_counter_in  <= 0;
-          input_address_in  <= input_addr_init + INPUTS_N;
+          num_of_inputs       <= INPUTS_N / PARALLEL_RATE - 1;
+          num_of_neurons      <= NEURONS_N - 1;
+          neuron_counter_in   <= 0;
+          input_counter_in    <= 0;
+          layer_counter_in    <= 0;
+          input_address_in    <= input_addr_init + INPUTS_N;
           input_addr_init_in  <= input_addr_init + INPUTS_N;
-          weight_address_in <= (others => '0');
-          bias_address_in   <= (others => '0');
-          result_address_in <= (others => '0');
-          reinit            <= '1';
-          mux_i_sel         <= '0';
+          weight_address_in   <= (others => '0');
+          bias_address_in     <= (others => '0');
+          result_address_in   <= (others => '0');
+          reinit              <= '1';
+          mux_i_sel           <= '0';
 
         when init_state =>
-          read_ena  <= '1'; -- enable to brams and neuron
-          calc_count_in <= 0;
+          read_ena       <= '1'; -- enable to brams and neuron
+          calc_count_in  <= 0;
 
         when count_state =>
           input_counter_in <= input_counter + 1;
           if (input_counter = 1) then
             input_counter_in <= 0;
-            ready <= '1';
+            ready            <= '1';
           end if;
 
         when read_state =>
@@ -277,17 +279,17 @@ begin
           end if;
 
         when wb_state =>
-          calculate <= '1';
-          wb_ena <= '0';
-          activate <= '1'; -- enable activation function
-          wb_address_in <= wb_address + 1;  -- for remembering where to save the answer
+          calculate      <= '1';
+          wb_ena         <= '0';
+          activate       <= '1'; -- enable activation function
+          wb_address_in  <= wb_address + 1;  -- for remembering where to save the answer
 
           -- if it's the last layer, find out maximum result also
 
         when res_state =>
-          wb_ena     <= '1';
-          reset_sum  <= '1';
-          calc_count_in <= 0;
+          wb_ena         <= '1';
+          reset_sum      <= '1';
+          calc_count_in  <= 0;
 
           -- if all neurons have been calculated, move to next state
           if neuron_counter = num_of_neurons then
@@ -317,9 +319,9 @@ begin
           num_of_inputs <= NEURONS_N/PARALLEL_RATE - 1;
           num_of_neurons <= NEURONS_O - 1;
 
-          layer_counter_in <= layer_counter + 1;
+          layer_counter_in  <= layer_counter + 1;
           result_address_in <= (others => '0');
-          wb_address_in <= (others => '0');  -- for remembering where to save the answer
+          wb_address_in     <= (others => '0');  -- for remembering where to save the answer
 
           if layer_counter = LAYERS_N-1 then
             done <= '1';

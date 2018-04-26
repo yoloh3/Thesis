@@ -68,7 +68,7 @@ begin
         variable iline   : line;
         file myfile      : text;
       begin
-        file_open(myfile, "../tb/output_labers.bin", read_mode);
+        file_open(myfile, "../tb/output_labels.bin", read_mode);
         for i in 0 to NUM_OF_TESTS - 1 loop 
           readline(myfile, iline);
           read(iline, out_tmp(i));
@@ -90,6 +90,7 @@ begin
         push_button(0) <= '1';
         wait until fnish = '1';
         actual_out(i) := to_integer(unsigned(max_index) - 1);
+
         if actual_out(i) = expected_out(i) then
           correct_num := correct_num + 1;
           print("Test #" & integer'image(i+1) & " correct: " & integer'image(actual_out(i)));
