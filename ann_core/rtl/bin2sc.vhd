@@ -30,7 +30,7 @@ use work.conf.all;
 -- Entity declaration
 --------------------------------------------------------------------------------- 
 entity bin2sc is
-  generic ( IN_SIZE : integer := 8);
+  generic ( IN_SIZE : integer := 16);
   port (
     clk             : in std_logic;
     reset           : in std_logic;
