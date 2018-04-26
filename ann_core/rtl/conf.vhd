@@ -25,8 +25,8 @@ package conf is
   constant SYNTHESIS    : integer := 0;
 
   constant NUM_OF_TESTS : integer := 1000;
-  constant BIT_WIDTH    : integer := 10;
-  constant FRACTION     : integer := 4;
+  constant BIT_WIDTH    : integer := 16;
+  constant FRACTION     : integer := 8;
 
   constant SC_WIDTH     : integer := BIT_WIDTH;
   -- constant SC_DELAY     : integer := 2**SC_WIDTH-1;

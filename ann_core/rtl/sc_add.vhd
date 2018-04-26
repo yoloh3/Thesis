@@ -32,7 +32,6 @@ entity sc_add is
     reset : in std_logic;
     x1    : in std_logic;
     x2    : in std_logic;
-    sel   : in std_logic;
     y     : out std_logic
   );
 end entity; 

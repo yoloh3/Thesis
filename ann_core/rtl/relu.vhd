@@ -42,6 +42,7 @@ begin
     variable counter  : integer := 1;
   begin
     if reset = '1' then
+      output <= (others => '0');
     elsif rising_edge(clk) then
       if (enable = '1') then
         if input(BIT_WIDTH-1) = '0' then

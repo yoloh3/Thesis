@@ -96,8 +96,9 @@ architecture rtl of sc_neuron is
       enable_in       : in std_logic;
       x               : in input_array(0 to IN_SIZE - 1);
       w               : in input_array(0 to IN_SIZE - 1);
+      b               : in std_logic_vector(SC_WIDTH-1 downto 0);
       sc_x            : out std_logic_vector(0 to IN_SIZE - 1);
-      sc_0_5          : out std_logic;
+      sc_b            : out std_logic;
       sc_w            : out std_logic_vector(0 to IN_SIZE - 1)
     );
   end component; 
@@ -116,7 +117,6 @@ architecture rtl of sc_neuron is
       reset : in std_logic;
       x1    : in std_logic;
       x2    : in std_logic;
-      sel   : in std_logic;
       y     : out std_logic
     );
   end component;
@@ -137,6 +137,7 @@ architecture rtl of sc_neuron is
       reset  : in std_logic;
       enable : in std_logic;
       input  : in std_logic_vector(SUM_WIDTH-1 downto 0);
+      bias   : in std_logic_vector(SC_WIDTH-1 downto 0);
       output : out std_logic_vector(SC_WIDTH-1 downto 0)
     );
   end component;
@@ -155,12 +156,16 @@ architecture rtl of sc_neuron is
 
   signal sc_x    : std_logic_vector(0 to IN_SIZE - 1);
   signal sc_w    : std_logic_vector(0 to IN_SIZE - 1);
-  signal sc_mult : std_logic_vector(0 to IN_SIZE - 1);
+  signal sc_b    : std_logic;
   signal sc_sum  : std_logic;
+  signal sc_sop  : std_logic;
+  signal sc_mult : std_logic_vector(0 to IN_SIZE - 1);
+  signal sc_tmp  : std_logic_vector(0 to 13);
 
   signal ctrl     : std_logic_vector(CTRL_WIDTH-1 downto 0);
-  signal sum      : unsigned(SUM_WIDTH-1 downto 0);
+  signal sop      : unsigned(SUM_WIDTH-1 downto 0);
   signal counter  : unsigned(SC_WIDTH-1 downto 0);
+  signal sum      : unsigned(SUM_WIDTH-1 downto 0);
 
   --pragma synthesis_off
   signal v_x    : integer := 0;
@@ -182,35 +187,48 @@ begin
     port map (clk, reset, enable, sc_sum, v_sum);
   --pragma synthesis_on
 
-  sum_count: process (clk, reset)
-    --pragma synthesis_off
+  sop_count: process (clk, reset)
     variable test_count : real := 1.0;
-    --pragma synthesis_on
   begin
     if reset = '1' then
+      sop     <= (others => '0');
       sum     <= (others => '0');
       counter <= (others => '0');
     elsif rising_edge(clk) then
       if set_seed = '1' then
-        -- sum <= (others => '0');
-        sum <= (SUM_WIDTH-SC_WIDTH-1 downto 0 => '0')
-             & unsigned(b);
+        sop <= (others => '0');
+        sum <= (others => '0');
+        -- sop <= (SUM_WIDTH - SC_WIDTH - 1 downto 0 => '0')
+               -- & unsigned(b);
+        -- sum <= (SUM_WIDTH - SC_WIDTH - 1 downto 0 => '0')
+               -- & unsigned(b);
       elsif enable = '1' then
-        counter <= counter + 1;
+        if sc_sop = '1' then
+          sop <= sop + 1;
+        end if;
+
         if sc_sum = '1' then
           sum <= sum + 1;
         end if;
+
+        counter <= counter + 1;
+
+      else
+          -- sop <= (others => '0');
+          -- sum <= (others => '0');
+          counter <= (others => '0');
       end if;
 
+
       --pragma synthesis_off
-      if activ = '1' then
+      if counter = 2**SC_WIDTH-1 then
+
+        print("sop_sc     = "
+             & real'image(16.0*(real(to_integer(sop))/2.0**(SC_WIDTH-1)-test_count)));
+        print("sum_sc     = " &
+        real'image(32.0*(real(v_sum)/2.0**(SC_WIDTH-1) - test_count + 1.0)));
+
         test_count := test_count + 1.0;
-        print("x1_sc    = " & real'image(real(v_x)/2.0**(SC_WIDTH-1)-1.0));
-        print("w1_sc    = " & real'image(real(v_w)/2.0**(SC_WIDTH-1)-1.0));
-        print("b_sc     = " & real'image(real(to_integer(unsigned(b)))/2.0**(SC_WIDTH-1)-1.0));
-        print("x1*w1_sc = " & real'image(real(v_mul)/2.0**(SC_WIDTH-1)-1.0));
-        print("sum_sc   = " & real'image(real(v_sum)/2.0**(SC_WIDTH-1)-1.0));
-        print("sum+b_sc = " & real'image(real(to_integer(sum))/2.0**(SC_WIDTH-1)-test_count));
       end if;
       --pragma synthesis_on
 
@@ -221,7 +239,43 @@ begin
       sc_mult(i) <= sc_x(i) xnor sc_w(i);
   end generate;
 
-  sc_sum <= sc_mult(to_integer(unsigned(ctrl(3 downto 0))));
+  -- sc_sum <= sc_mult(to_integer(unsigned(ctrl(3 downto 0))));
+
+  -- binary adder tree
+  adder0: sc_add
+    port map(clk, reset, sc_mult(0), sc_mult(1), sc_tmp(0));
+  adder1: sc_add
+    port map(clk, reset, sc_mult(2), sc_mult(3), sc_tmp(1));
+  adder2: sc_add
+    port map(clk, reset, sc_mult(4), sc_mult(5), sc_tmp(2));
+  adder3: sc_add
+    port map(clk, reset, sc_mult(6), sc_mult(7), sc_tmp(3));
+  adder4: sc_add
+    port map(clk, reset, sc_mult(8), sc_mult(9), sc_tmp(4));
+  adder5: sc_add
+    port map(clk, reset, sc_mult(10), sc_mult(11), sc_tmp(5));
+  adder6: sc_add
+    port map(clk, reset, sc_mult(12), sc_mult(13), sc_tmp(6));
+  adder7: sc_add
+    port map(clk, reset, sc_mult(14), sc_mult(15), sc_tmp(7));
+  adder8: sc_add
+    port map(clk, reset, sc_tmp(0), sc_tmp(1), sc_tmp(8));
+  adder9: sc_add
+    port map(clk, reset, sc_tmp(2), sc_tmp(3), sc_tmp(9));
+  adder10: sc_add
+    port map(clk, reset, sc_tmp(4), sc_tmp(5), sc_tmp(10));
+  adder11: sc_add
+    port map(clk, reset, sc_tmp(6), sc_tmp(7), sc_tmp(11));
+  adder12: sc_add
+    port map(clk, reset, sc_tmp(8), sc_tmp(9), sc_tmp(12));
+  adder13: sc_add
+    port map(clk, reset, sc_tmp(10), sc_tmp(11), sc_tmp(13));
+  adder14: sc_add
+    port map(clk, reset, sc_tmp(12), sc_tmp(13), sc_sop);
+  adder15: sc_add
+    port map(clk, reset, sc_sop, sc_b, sc_sum);
+
+
 
   bin2sc_i: bin2sc
     generic map(
@@ -233,8 +287,10 @@ begin
       set_seed    => set_seed,
       enable_in   => enable,
       x           => x,
+      b           => b,
       w           => w,
       sc_x        => sc_x,
+      sc_b        => sc_b,
       sc_w        => sc_w
     );
 
@@ -255,6 +311,7 @@ begin
       clk    => clk,
       reset  => reset,
       enable => activ,
+      bias   => b,
       input  => std_logic_vector(sum),
       output => y);
 

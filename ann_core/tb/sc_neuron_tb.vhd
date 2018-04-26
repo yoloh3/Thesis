@@ -97,16 +97,16 @@ begin
     variable sum: real;
   begin
 
-
     b <= real_to_sc(v_b / 16.0, SC_WIDTH);
-    sum := 0.0;
+    sum := real_sum;
+    -- sum := 0.0;
+
     for i in 0 to IN_SIZE-1 loop
       x(i) <= real_to_sc(v_x(i), SC_WIDTH);
       w(i) <= real_to_sc(v_w(i), SC_WIDTH);
       sum := v_x(i) * v_w(i) + sum;
     end loop;
     v_y := relu_funct(sum + v_b);
-
     real_sum <= sum;
 
     if test_count = 0 then
@@ -114,6 +114,7 @@ begin
       wait until rising_edge(clk);
       set_seed <= '0';
     end if;
+    test_count <= test_count + 1;
 
     enable <= '1';
 
@@ -122,14 +123,11 @@ begin
     activ <= '1';
     wait until rising_edge(clk);
     activ <= '0';
+    wait until rising_edge(clk);
     wait for period / 8;
 
-    print("x1_expect         '= " & real'image(v_x(0)));
-    print("w1_expect         '= " & real'image(v_w(0)));
-    print("b/16_expect       '= " & real'image(v_b/16.0));
-    print("x1*w1_expect      '= " & real'image(v_x(0) * v_w(0)));
-    print("sum/16_expect     '= " & real'image(sum/16.0));
-    print("(sum+b)/16_expect '= " & real'image((sum+v_b)/16.0));
+    print("sop_expect = " & real'image(sum));
+    print("sum_expect = " & real'image(sum+v_b));
 
     print("Expected vs actual: "
         & real'image(v_y) & " "
@@ -144,9 +142,9 @@ begin
 
   end procedure test_case;
 
-    variable test_num      : integer := 2;
+    variable test_num      : integer := 3;
     constant rand_num      : integer := IN_SIZE * 2 + 1;
-    variable seed1, seed2  : positive := 3;
+    variable seed1, seed2  : positive := 5;
     variable rand          : real_array(0 to rand_num - 1);
   begin
     mse_error <= 0.0;    
@@ -164,9 +162,8 @@ begin
 
       test_case(rand(0 to IN_SIZE-1),
                 rand(IN_SIZE to 2*IN_SIZE-1),
-                0.0, real_sum
+                -0.5, real_sum
       );
-      test_count <= test_count + 1;
     end loop;
 
     wait for period;
