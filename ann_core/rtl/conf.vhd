@@ -25,7 +25,7 @@ package conf is
   constant SYNTHESIS    : integer := 0;
 
   constant NUM_OF_TESTS : integer := 1000;
-  constant BIT_WIDTH    : integer := 16;
+  constant BIT_WIDTH    : integer := 14;
   constant FRACTION     : integer := 8;
 
   constant SC_WIDTH     : integer := BIT_WIDTH;
@@ -34,7 +34,7 @@ package conf is
 
   constant PARALLEL_RATE : integer := 16;
   constant CTRL_WIDTH    : integer := 4;
-  constant SUM_WIDTH     : integer := SC_WIDTH + 6;
+  constant SUM_WIDTH     : integer := SC_WIDTH + 7;
 
   constant INPUTS_N      : integer := 784;
   constant NEURONS_N     : integer := 64;
