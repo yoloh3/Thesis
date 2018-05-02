@@ -25,8 +25,8 @@ package conf is
   constant SYNTHESIS    : integer := 0;
 
   constant NUM_OF_TESTS : integer := 1000;
-  constant BIT_WIDTH    : integer := 14;
-  constant FRACTION     : integer := 8;
+  constant BIT_WIDTH    : integer := 10;
+  constant FRACTION     : integer := 4;
 
   constant SC_WIDTH     : integer := BIT_WIDTH;
   -- constant SC_DELAY     : integer := 2**SC_WIDTH-1;
@@ -34,7 +34,11 @@ package conf is
 
   constant PARALLEL_RATE : integer := 16;
   constant CTRL_WIDTH    : integer := 4;
+<<<<<<< HEAD
   constant SUM_WIDTH     : integer := SC_WIDTH + 7;
+=======
+  constant SUM_WIDTH     : integer := SC_WIDTH + 10;
+>>>>>>> Save version: Run SC neuron (relu, 784 input) finish. But some case is overflow.
 
   constant INPUTS_N      : integer := 784;
   constant NEURONS_N     : integer := 64;
