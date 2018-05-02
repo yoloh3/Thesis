@@ -34,11 +34,7 @@ package conf is
 
   constant PARALLEL_RATE : integer := 16;
   constant CTRL_WIDTH    : integer := 4;
-<<<<<<< HEAD
-  constant SUM_WIDTH     : integer := SC_WIDTH + 7;
-=======
   constant SUM_WIDTH     : integer := SC_WIDTH + 10;
->>>>>>> Save version: Run SC neuron (relu, 784 input) finish. But some case is overflow.
 
   constant INPUTS_N      : integer := 784;
   constant NEURONS_N     : integer := 64;
