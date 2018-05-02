@@ -39,14 +39,14 @@ architecture behavioral of sc_neuron_tb is
 	signal x : input_array(0 to IN_SIZE-1) := (others => (others => '0'));
 	signal w : input_array(0 to IN_SIZE-1) := (others => (others => '0'));
 	signal b : std_logic_vector(BIT_WIDTH-1 downto 0) := (others => '0');
-  signal y : std_logic_vector(BIT_WIDTH downto 0);
+  signal y : std_logic_vector(BIT_WIDTH-1 downto 0);
 
   type real_array is array (integer range <>) of real;
   signal sum_old    : real := 0.0;
   signal mse_error  : real := 0.0;
   signal max_error  : real := 0.0;
   signal test_count : integer := 0;
-  constant NUM_CAL  : integer := 49;
+  constant NUM_CAL  : integer := 1;
 
 begin
 
@@ -117,7 +117,7 @@ begin
       a_y := 16.0 * (real(to_integer(unsigned(y)))
                   / 2.0**(SC_WIDTH-1) - 1.0);
       print("Expected vs actual:  "
-          & real'image(v_y) & " "
+          & real'image(sum + v_b) & " "
           & real'image(a_y));
 
       mse_error <= mse_error + mse(v_y, a_y);
@@ -125,13 +125,13 @@ begin
         max_error <= abs(v_y - a_y);
       end if;
 
-      assert abs(v_y - a_y) < 1.0
-        report "Far of wrong." severity error;
+      assert (abs(v_y - a_y) < 1.5 OR a_y > 15.5 OR a_y < -15.5)
+        report "Far of wrong." severity failure;
     end if;
 
   end procedure test_case;
 
-    variable test_num      : integer := 50;
+    variable test_num      : integer := 1000;
     variable input_num     : integer := NUM_CAL;
     constant rand_num      : integer := IN_SIZE * 2 + 1;
     variable seed1, seed2  : positive := 4;
@@ -155,22 +155,41 @@ begin
         wait for period;
 
         for j in 0 to rand_num - 1 loop
-          uniform(seed1, seed2, rand(j));  -- random value in range 0.0 to 1.0
-          rand(j) := (rand(j) * 2.0 - 1.0);  -- convert -1.0 to 1.0
+          uniform(seed1, seed2, rand(j));
+          rand(j) := (rand(j) * 2.0 - 1.0);
         end loop;
 
         test_case(rand(0 to IN_SIZE-1),
                   rand(IN_SIZE to 2*IN_SIZE-1),
                   rand(2*IN_SIZE));
-                  -- rand(2*IN_SIZE));
       end loop;
-
     end loop;
 
     wait for period;
     print("Mse = "
       & real'image(mse_error / real(test_num)));
     print("Max error = " & real'image(max_error));
+
+
+    print("");
+    print("Test special 1:");
+    for j in 0 to rand_num - 1 loop
+      rand(j) := 1.0;
+    end loop;
+    test_case(rand(0 to IN_SIZE-1),
+              rand(IN_SIZE to 2*IN_SIZE-1),
+              rand(2*IN_SIZE));
+
+    print("Test special 2:");
+    for j in 0 to (rand_num-1)/2 - 1 loop
+      rand(j) := 1.0;
+    end loop;
+    for j in (rand_num-1)/2 to rand_num-1 loop
+      rand(j) := -1.0;
+    end loop;
+    test_case(rand(0 to IN_SIZE-1),
+              rand(IN_SIZE to 2*IN_SIZE-1),
+              rand(2*IN_SIZE));
 
     finish(1);
   end process;

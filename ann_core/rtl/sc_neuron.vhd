@@ -40,7 +40,7 @@ entity sc_neuron is
   	x        : in input_array(0 to IN_SIZE - 1);
   	w        : in input_array(0 to IN_SIZE - 1);
   	b        : in std_logic_vector(BIT_WIDTH-1 downto 0);
-    y        : out std_logic_vector(BIT_WIDTH downto 0)
+    y        : out std_logic_vector(BIT_WIDTH-1 downto 0)
   );
 end sc_neuron;
 
@@ -58,7 +58,7 @@ architecture rtl of sc_neuron is
   signal counter : unsigned(SUM_WIDTH-1 downto 0);
   signal b_tmp   : unsigned(SUM_WIDTH-1 downto 0);
   signal sum_tmp : unsigned(SUM_WIDTH-1 downto 0);
-  signal sum     : unsigned(SC_WIDTH downto 0);
+  signal sum     : unsigned(SC_WIDTH-1 downto 0);
 
   constant VAL_1  : unsigned(SUM_WIDTH-1 downto 0)
     := to_unsigned(1*2**SC_WIDTH, SUM_WIDTH);
@@ -69,8 +69,11 @@ begin
 
   b_tmp   <= (SUM_WIDTH-BIT_WIDTH-1 downto 0 => '0')
            & unsigned(b);
-  sum_tmp <= (sop - VAL_MINUS + b_tmp);
-  sum     <= sum_tmp(SC_WIDTH downto 0);
+  sum_tmp <= ((sop + b_tmp) - VAL_MINUS);
+
+  sum     <= (others => '0') when sum_tmp(SUM_WIDTH-1) = '1' else
+             (others => '1') when sum_tmp(SC_WIDTH)    = '1' else
+             sum_tmp(SC_WIDTH-1 downto 0);
 
   sop_count: process (clk, reset)
     variable test_count : real := 1.0;

@@ -29,14 +29,14 @@ entity sc_relu is
     clk    : in std_logic;
     reset  : in std_logic;
     enable : in std_logic;
-    input  : in std_logic_vector(SC_WIDTH downto 0);
-    output : out std_logic_vector(SC_WIDTH downto 0)
+    input  : in std_logic_vector(SC_WIDTH-1 downto 0);
+    output : out std_logic_vector(SC_WIDTH-1 downto 0)
   );
 end sc_relu;
 
 architecture behav of sc_relu is
-  constant VAL_0_5: unsigned(SC_WIDTH downto 0)
-    := to_unsigned(2**(SC_WIDTH-1), SC_WIDTH+1);
+  constant VAL_0_5: unsigned(SC_WIDTH-1 downto 0)
+    := to_unsigned(2**(SC_WIDTH-1), SC_WIDTH);
 begin
 
   process (reset, clk) is
