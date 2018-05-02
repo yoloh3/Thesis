@@ -39,7 +39,7 @@ architecture behavioral of sc_neuron_tb is
 	signal x : input_array(0 to IN_SIZE-1) := (others => (others => '0'));
 	signal w : input_array(0 to IN_SIZE-1) := (others => (others => '0'));
 	signal b : std_logic_vector(BIT_WIDTH-1 downto 0) := (others => '0');
-  signal y : std_logic_vector(BIT_WIDTH-1 downto 0);
+  signal y : std_logic_vector(BIT_WIDTH downto 0);
 
   type real_array is array (integer range <>) of real;
   signal sum_old    : real := 0.0;
@@ -111,10 +111,11 @@ begin
     wait for period / 8;
 
     -- print("sop_expect   = " & real'image(sum));
-    -- print("sum_expect   = " & real'image(sum+v_b));
+    -- print("    sum_expect   = " & real'image(sum+v_b));
 
     if test_count = NUM_CAL then
-      a_y := 16.0 * sc_to_real(y);
+      a_y := 16.0 * (real(to_integer(unsigned(y)))
+                  / 2.0**(SC_WIDTH-1) - 1.0);
       print("Expected vs actual:  "
           & real'image(v_y) & " "
           & real'image(a_y));
@@ -130,7 +131,7 @@ begin
 
   end procedure test_case;
 
-    variable test_num      : integer := 20;
+    variable test_num      : integer := 50;
     variable input_num     : integer := NUM_CAL;
     constant rand_num      : integer := IN_SIZE * 2 + 1;
     variable seed1, seed2  : positive := 4;
@@ -160,7 +161,7 @@ begin
 
         test_case(rand(0 to IN_SIZE-1),
                   rand(IN_SIZE to 2*IN_SIZE-1),
-                  0.5);
+                  rand(2*IN_SIZE));
                   -- rand(2*IN_SIZE));
       end loop;
 

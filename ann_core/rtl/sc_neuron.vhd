@@ -40,7 +40,7 @@ entity sc_neuron is
   	x        : in input_array(0 to IN_SIZE - 1);
   	w        : in input_array(0 to IN_SIZE - 1);
   	b        : in std_logic_vector(BIT_WIDTH-1 downto 0);
-    y        : out std_logic_vector(BIT_WIDTH-1 downto 0)
+    y        : out std_logic_vector(BIT_WIDTH downto 0)
   );
 end sc_neuron;
 
@@ -54,25 +54,23 @@ architecture rtl of sc_neuron is
   signal sc_mult : std_logic_vector(0 to IN_SIZE - 1);
   signal sc_tmp  : std_logic_vector(0 to 13);
 
-  signal ctrl     : std_logic_vector(CTRL_WIDTH-1 downto 0);
-  signal sop      : unsigned(SUM_WIDTH-1 downto 0);
-  signal counter  : unsigned(SUM_WIDTH-1 downto 0);
-  signal b_tmp    : unsigned(SUM_WIDTH-1 downto 0);
-  signal sum_tmp  : unsigned(SUM_WIDTH-1 downto 0);
-  signal sum      : unsigned(SC_WIDTH-1 downto 0);
+  signal sop     : unsigned(SUM_WIDTH-1 downto 0);
+  signal counter : unsigned(SUM_WIDTH-1 downto 0);
+  signal b_tmp   : unsigned(SUM_WIDTH-1 downto 0);
+  signal sum_tmp : unsigned(SUM_WIDTH-1 downto 0);
+  signal sum     : unsigned(SC_WIDTH downto 0);
 
   constant VAL_1  : unsigned(SUM_WIDTH-1 downto 0)
     := to_unsigned(1*2**SC_WIDTH, SUM_WIDTH);
   constant VAL_MINUS : unsigned(SUM_WIDTH-1 downto 0)
     := to_unsigned(NUM_CAL*2**(SC_WIDTH-1), SUM_WIDTH);
-    -- := to_unsigned(NUM_CAL*2**(SC_WIDTH-1) + 15*2**(SC_WIDTH-5), SUM_WIDTH);
 
 begin
 
-  b_tmp   <= (SUM_WIDTH-BIT_WIDTH-1 downto 0 => '0') & unsigned(b);
-  sum_tmp <= (sop + b_tmp - VAL_MINUS);
-  -- sum     <= sum_tmp(SUM_WIDTH-1 downto SUM_WIDTH-BIT_WIDTH);
-  sum     <= sum_tmp(SC_WIDTH-1 downto 0);
+  b_tmp   <= (SUM_WIDTH-BIT_WIDTH-1 downto 0 => '0')
+           & unsigned(b);
+  sum_tmp <= (sop - VAL_MINUS + b_tmp);
+  sum     <= sum_tmp(SC_WIDTH downto 0);
 
   sop_count: process (clk, reset)
     variable test_count : real := 1.0;
@@ -98,9 +96,9 @@ begin
         -- print("sop_sc       = "
               -- & real'image(16.0 *
                 -- (real(to_integer(sop)) / 2.0**(SC_WIDTH-1) - test_count)));
-        -- print("sum_actual   = "
+        -- print("    sum_actual   = "
               -- & real'image(16.0 *
-                -- (real(to_integer(sum)) / 2.0**(SC_WIDTH-1) - 1.0)));
+                -- (real(to_integer(sum_tmp)) / 2.0**(SC_WIDTH-1) - 1.0)));
         test_count := test_count + 1.0;
       end if;
       --pragma synthesis_on
@@ -112,7 +110,6 @@ begin
       sc_mult(i) <= sc_x(i) xnor sc_w(i);
   end generate;
 
-  -- sc_sum <= sc_mult(to_integer(unsigned(ctrl(3 downto 0))));
   adder0: entity work.sc_add
     port map(clk, reset, sc_mult(0), sc_mult(1), sc_tmp(0));
   adder1: entity work.sc_add
@@ -146,8 +143,6 @@ begin
   adder15: entity work.sc_add
     port map(clk, reset, sc_sop, sc_b, sc_sum);
 
-
-
   bin2sc_i: entity work.bin2sc
     generic map(
       IN_SIZE => IN_SIZE
@@ -164,18 +159,6 @@ begin
       sc_b        => sc_b,
       sc_w        => sc_w
     );
-
-  lfsr_ctrl: entity work.lfsr
-    generic map (
-      DATA_WIDTH  => CTRL_WIDTH
-    )
-    port map (
-      clk         => clk,
-      reset       => reset,
-      set_seed    => set_seed,
-      seed_in     => std_logic_vector(to_unsigned(314, CTRL_WIDTH)),
-      enable_in   => enable,
-      lfsr_out    => ctrl);
 
   activation_function: entity work.sc_relu
     port map(
