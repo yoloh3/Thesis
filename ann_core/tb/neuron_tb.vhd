@@ -16,22 +16,6 @@ end neuron_tb;
 
 architecture behavioral of neuron_tb is
 
-	component neuron is
-    generic ( 
-      IN_SIZE : integer := 16);
-	  port (
-	  	clk    : in std_logic;
-	  	reset  : in std_logic;
-	  	clear  : in std_logic;
-	  	enable : in std_logic;
-      activ  : in std_logic;
-	  	x      : in input_array(0 to IN_SIZE - 1);
-	  	w      : in input_array(0 to IN_SIZE - 1);
-	  	b      : in std_logic_vector(BIT_WIDTH-1 downto 0);
-	    y      : out std_logic_vector(BIT_WIDTH-1 downto 0)
-	  );
-	end component;
-		
   constant PERIOD  : time      := 10 ns;
   constant IN_SIZE : integer   := PARALLEL_RATE;
 	signal clk       : std_logic := '0';
@@ -39,6 +23,8 @@ architecture behavioral of neuron_tb is
 	signal clear     : std_logic := '1';
 	signal enable    : std_logic := '0';
 	signal activ     : std_logic := '0';
+  signal mse_error : real := 0.0;
+  signal max_error : real := 0.0;
 
 	signal x : input_array(0 to IN_SIZE-1) := (others => (others => '0'));
 	signal w : input_array(0 to IN_SIZE-1) := (others => (others => '0'));
@@ -52,7 +38,7 @@ begin
   clk <= not(clk) after PERIOD / 2;
   reset <= '0' after 2 * PERIOD + PERIOD / 2;
   
-  dut: neuron
+  dut: entity work.neuron
   generic map (
     IN_SIZE => IN_SIZE)
   port map (
@@ -70,12 +56,14 @@ begin
   -- waveform generation
   WaveGen_proc: process
   procedure test_case (
-    constant v_x: in real_array(0 to IN_SIZE-1); 
-    constant v_w: in real_array(0 to IN_SIZE-1);
-    constant v_b: in real)
+    constant v_x   : in real_array(0 to IN_SIZE-1);
+    constant v_w   : in real_array(0 to IN_SIZE-1);
+    constant v_b   : in real)
   is
-    variable v_y: real;
-    variable sum: real;
+    variable v_y   : real;
+    variable v_mse : real;
+    variable a_y   : real;
+    variable sum   : real;
   begin
     clear <= '1';
     wait until rising_edge(clk);
@@ -89,7 +77,7 @@ begin
       w(i) <= real_to_stdlv(v_w(i), BIT_WIDTH, FRACTION);
       sum := v_x(i) * v_w(i) + sum;
     end loop;
-    v_y := sigmoid_funct(sum + v_b);
+    v_y := relu_funct(sum + v_b);
 
     wait until rising_edge(clk);
     enable <= '0';
@@ -98,14 +86,19 @@ begin
     activ <= '0';
     wait for period / 8;
 
-    print("At " & time'image(now) & ", expected vs actual: ");
-    print(real'image(v_y) & " "
-        & real'image(stdlv_to_real(y, FRACTION)));
-    print(" ");
+    a_y := stdlv_to_real(y, FRACTION);
+
+    print("Expected vs actual:  "
+        & real'image(v_y) & " "
+        & real'image(a_y));
+    mse_error <= mse_error + mse(v_y, a_y);
+    if (abs(v_y - a_y) > max_error) then
+      max_error <= abs(v_y - a_y);
+    end if;
 
   end procedure test_case;
 
-    variable test_num      : integer := 20;
+    variable test_num      : integer := 1000;
     constant rand_num      : integer := IN_SIZE * 2 + 1;
     variable seed1, seed2  : positive;
     variable rand          : real_array(0 to rand_num - 1);
@@ -125,6 +118,12 @@ begin
         );
      end loop;
 
+    wait for period;
+    print("Mse = "
+      & real'image(mse_error / real(test_num)));
+    print("Max error = " & real'image(max_error));
+
+    print("");
     print("* Test special (1) (maximum):");
     for i in 0 to IN_SIZE - 1 loop
       rand(i) := 7.0;  -- convert -1.0 to 1.0
