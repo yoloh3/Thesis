@@ -95,11 +95,11 @@ begin
 
   ram_i: entity work.blk_mem_img
     port map (clka  => clk,
-               ena   => read_ena,
-               wea   => bram_i_wea,
-               addra => bram_i_adr,
-               dina  => bram_i_in,
-               douta => bram_i_out);
+              ena   => read_ena,
+              wea   => bram_i_wea,
+              addra => bram_i_adr,
+              dina  => bram_i_in,
+              douta => bram_i_out);
 
   ram_w: entity work.blk_mem_weight
      port map (clka  => clk,
@@ -111,11 +111,11 @@ begin
 
   ram_b: entity work.blk_mem_bias
     port map (clka  => clk,
-               ena   => read_ena,
-               wea   => bram_b_wea,
-               addra => bram_b_adr,
-               dina  => bram_b_in,
-               douta => bram_b_out);
+              ena   => read_ena,
+              wea   => bram_b_wea,
+              addra => bram_b_adr,
+              dina  => bram_b_in,
+              douta => bram_b_out);
 
   ram_r: entity work.blk_mem_res
      port map (clka  => clk,
@@ -161,13 +161,13 @@ begin
               y      => neuron_y);
 
   max_0: entity work.max
-    port map(clk,
-             max_ena,
-             max_res,
-             neuron_y,
-             neuron_index,
-             max_output,
-             max_index);
+    port map(clk       => clk,
+             ena       => max_ena,
+             res       => max_res,
+             x         => neuron_y,
+             index     => neuron_index,
+             y         => max_output,
+             max_index => max_index);
 
   --pragma synthesis_off
   count: process (reset,clk)
