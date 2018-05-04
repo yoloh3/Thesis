@@ -6,9 +6,9 @@
 -- Copyright notification
 -- No part may be reproduced except as authorized by written permission.
 -- 
--- @File            : template.vhd
+-- @File            : conf.vhd
 -- @Author          : Huy-Hung Ho       @Modifier      : Huy-Hung Ho
--- @Created Date    : Mar 28 2018       @Modified Date : Mar 28 2018 12:06
+-- @Created Date    : Mar 28 2018       @Modified Date : May 04 2018 08:54
 -- @Project         : Artificial Neural Network
 -- @Module          : template
 -- @Description     :
@@ -16,9 +16,9 @@
 -- @ID              :
 --
 ---------------------------------------------------------------------------------
-LIBRARY ieee;
-USE ieee.std_logic_1164.all;
-use IEEE.numeric_std.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 package conf is
   -- constants
@@ -33,7 +33,6 @@ package conf is
   constant SC_DELAY      : integer := 1;
 
   constant PARALLEL_RATE : integer := 16;
-  constant CTRL_WIDTH    : integer := 4;
   constant SUM_WIDTH     : integer := SC_WIDTH + 10;
 
   constant INPUTS_N      : integer := 784;

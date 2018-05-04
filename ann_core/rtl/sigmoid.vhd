@@ -87,6 +87,8 @@ begin
         output_tmp := mem(to_integer(signed(input)));
         output <= (BIT_WIDTH - FRACTION - 2 downto 0 => '0' )
                  & output_tmp;
+      else
+        output <= (others => '0');
         end if;
     end if;
   end process;
