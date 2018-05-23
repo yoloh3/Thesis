@@ -11,7 +11,7 @@ COMP_OPT := #-cover bcst
 VSIM_OPT := #-coverage
 TCL_ENAB := -c
 
-all: top_module
+all: sc_neuron
 
 init:
 	vlib work
@@ -43,6 +43,7 @@ sim:
 
 neuron: init
 	vcom $(RTL_DIR)/sigmoid.vhd \
+	     $(RTL_DIR)/relu.vhd \
 			 $(RTL_DIR)/neuron.vhd \
 			 $(TB_DIR)/neuron_tb.vhd
 	vsim -novopt -wlf neuron.wlf neuron_tb \
@@ -57,8 +58,14 @@ sc_neuron: init
 			 $(RTL_DIR)/sc_relu.vhd \
 			 $(RTL_DIR)/sc_neuron.vhd \
 			 $(TB_DIR)/sc_neuron_tb.vhd
-	vsim -novopt -wlf sc_neuron.wlf sc_neuron_tb \
+	vsim sc_neuron_tb \
 		-c -do "run -a; exit;"
+
+sim_sc_neuron: init
+	vsim -novopt -wlf sim_sc_neuron.wlf sc_neuron_tb \
+		-c -do "log -r *; run -a; exit;"
+	vsim sim_sc_neuron.wlf &
+
 
 sc_top: init
 	vcom -2008 $(RTL_DIR)/lfsr.vhd \
@@ -73,7 +80,7 @@ sc_top: init
 			 $(RTL_DIR)/controller.vhd \
 			 $(RTL_DIR)/top_module.vhd \
 			 $(TB_DIR)/top_module_tb.vhd
-	vsim $(VSIM_OPT) -novopt -wlf sc_top_module.wlf top_module_tb \
+	vsim $(VSIM_OPT) top_module_tb \
 		$(TCL_ENAB) -do "run -a; exit;"
 
 clean:

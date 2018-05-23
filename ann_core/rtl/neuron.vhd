@@ -55,27 +55,7 @@ architecture behavioral of neuron is
   type mult_array is array (integer range <>)
     of signed(BIT_WIDTH * 2 - 1 downto 0);
   signal mult     : mult_array(0 to IN_SIZE-1) := (others => (others => '0'));
-  signal mult_tmp : mult_array(0 to 14) := (others => (others => '0'));
-
-component sigmoid is
-  port (
-    clk    : in std_logic;
-    reset  : in std_logic;
-    enable : in std_logic;
-    input  : in std_logic_vector(BIT_WIDTH-1 downto 0);
-    output : out std_logic_vector(BIT_WIDTH-1 downto 0)
-  );
-end component;
-
-component relu is
-  port (
-    clk    : in std_logic;
-    reset  : in std_logic;
-    enable : in std_logic;
-    input  : in std_logic_vector(BIT_WIDTH-1 downto 0);
-    output : out std_logic_vector(BIT_WIDTH-1 downto 0)
-  );
-end component;
+  signal mult_tmp : mult_array(0 to 14)        := (others => (others => '0'));
 
 begin
 
@@ -110,15 +90,8 @@ begin
     if reset = '1' then
       sum_tmp <= (others => '0');
     elsif (rising_edge(clk)) then
-        -- for i in 0 to IN_SIZE - 1 loop
-        -- print("    weight(" & integer'image(i) & ") = " &
-        -- real'image(real(conv_integer(signed((w(i)))))/2.0**FRACTION));
-        -- end loop;
       if (clear = '1') then
         sum_tmp <= (others => '0');
-        -- print("    bias = " &
-        -- real'image(real(conv_integer(signed((b))))/2.0**FRACTION)
-        -- & "       " & integer'image(conv_integer(signed(b))));
       elsif (enable = '1') then
         sum_tmp <= sum_in + sum_of_mult;
       end if;
@@ -132,7 +105,7 @@ begin
     constant max_val : integer := 2**(BIT_WIDTH-FRACTION-1)-1;
     constant min_val : integer := -2**(BIT_WIDTH-FRACTION-1);
   begin
-    -- detect overflow when truncating
+    --detect overflow when truncating
     if sum >= signed(to_sfixed(max_val, mult_t)) then
       overflow <= '1';
       report "Maximum sum" severity warning;
@@ -148,7 +121,7 @@ begin
     end if;
   end process;
 
-  activation_function: relu
+  activation_function: entity work.relu
     port map(clk    => clk,
              reset  => reset,
              enable => activ,

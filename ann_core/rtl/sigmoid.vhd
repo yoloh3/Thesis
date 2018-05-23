@@ -8,7 +8,7 @@
 -- 
 -- @File            : sigmoid.vhd
 -- @Author          : Huy-Hung Ho       @Modifier      : Huy-Hung Ho
--- @Created Date    : Mar 28 2018       @Modified Date : Mar 28 2018 13:38
+-- @Created Date    : Mar 28 2018       @Modified Date : May 04 2018 10:21
 -- @Project         : Artificial Neural Network
 -- @Module          : sigmoid
 -- @Description     :
@@ -19,14 +19,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use std.textio.all;
 use work.conf.all;
 use ieee.math_real.all;
---pragma synthesis_off
-use work.tb_conf.all;
---pragma synthesis_on
--- library xil_defaultlib;
--- use xil_defaultlib.conf.all;
 
 entity sigmoid is
   port (
@@ -87,39 +81,9 @@ begin
         output_tmp := mem(to_integer(signed(input)));
         output <= (BIT_WIDTH - FRACTION - 2 downto 0 => '0' )
                  & output_tmp;
+      else
+        output <= (others => '0');
         end if;
     end if;
   end process;
 end LUT_funct;
-
--- architecture behav of sigmoid is
-  -- function sigmoid_funct(input: real) return real is
-  -- begin
-      -- return 1.0 / (1.0 + exp(-input));
-  -- end function;
-
--- begin
-  -- process (reset, clk) is
-    -- variable out_real : real;
-    -- variable counter  : integer := 1;
-  -- begin
-
-    -- if reset = '1' then
-        -- output <= (others => '0');
-    -- elsif rising_edge(clk) then
-      -- if (enable = '1') then
-        -- out_real := sigmoid_funct(real(to_integer(signed(input))) / 2.0**FRACTION);
-        -- output <= std_logic_vector(to_signed(integer(out_real * 2.0**FRACTION), BIT_WIDTH));
-
-        -- --pragma synthesis_off
-        -- -- print("Sigmoid out(" & integer'image(counter mod (NEURONS_N) ) & ") = "
-             -- -- & real'image(out_real) & "  =>  "
-             -- -- & integer'image((integer(out_real*2.0**FRACTION))));
-        -- --pragma synthesis_on
-
-        -- counter := counter + 1;
-      -- end if;
-    -- end if;
-  -- end process;
-
--- end behav;

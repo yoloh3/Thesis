@@ -1,5 +1,3 @@
----------------------------------------------------------------------------------
---
 -- The University of Engineering and Technology, Vietnam National University.
 -- All right resevered.
 --
@@ -30,22 +28,6 @@ end sc_neuron_tb;
 
 architecture behavioral of sc_neuron_tb is
 
-	component sc_neuron is
-    generic ( 
-      IN_SIZE  : integer := 16);
-	  port (
-	  	clk      : in std_logic;
-	  	reset    : in std_logic;
-	  	set_seed : in std_logic;
-	  	enable   : in std_logic;
-      activ    : in std_logic;
-	  	x        : in input_array(0 to IN_SIZE - 1);
-	  	w        : in input_array(0 to IN_SIZE - 1);
-	  	b        : in std_logic_vector(BIT_WIDTH-1 downto 0);
-	    y        : out std_logic_vector(BIT_WIDTH-1 downto 0)
-	  );
-	end component;
-		
   constant PERIOD  : time      := 10 ns;
   constant IN_SIZE : integer   := PARALLEL_RATE;
 	signal clk       : std_logic := '0';
@@ -60,19 +42,21 @@ architecture behavioral of sc_neuron_tb is
   signal y : std_logic_vector(BIT_WIDTH-1 downto 0);
 
   type real_array is array (integer range <>) of real;
-  signal real_sum  : real := 0.0;
-  signal mse_error : real := 0.0;
-  signal max_error : real := 0.0;
+  signal sum_old    : real := 0.0;
+  signal mse_error  : real := 0.0;
+  signal max_error  : real := 0.0;
   signal test_count : integer := 0;
+  constant NUM_CAL  : integer := 1;
 
 begin
 
   clk <= not(clk) after PERIOD / 2;
   reset <= '0' after 2 * PERIOD + PERIOD / 2;
   
-  dut: sc_neuron
+  dut: entity work.sc_neuron
   generic map (
-    IN_SIZE => IN_SIZE)
+    IN_SIZE => IN_SIZE,
+    NUM_CAL => NUM_CAL)
   port map (
     clk     => clk,
     reset   => reset,
@@ -88,28 +72,29 @@ begin
   -- waveform generation
   WaveGen_proc: process
   procedure test_case (
-    constant v_x: in real_array(0 to IN_SIZE-1); 
-    constant v_w: in real_array(0 to IN_SIZE-1);
-    constant v_b: in real;
-    constant v_s: in real)
+    constant v_x : in real_array(0 to IN_SIZE-1);
+    constant v_w : in real_array(0 to IN_SIZE-1);
+    constant v_b : in real)
+    -- constant v_s: in real)
   is
-    variable v_y: real;
-    variable sum: real;
+    variable v_y   : real;
+    variable v_mse : real;
+    variable a_y   : real;
+    variable sum   : real;
   begin
 
-
     b <= real_to_sc(v_b / 16.0, SC_WIDTH);
-    sum := 0.0;
+    sum := sum_old;
+
     for i in 0 to IN_SIZE-1 loop
       x(i) <= real_to_sc(v_x(i), SC_WIDTH);
       w(i) <= real_to_sc(v_w(i), SC_WIDTH);
       sum := v_x(i) * v_w(i) + sum;
     end loop;
     v_y := relu_funct(sum + v_b);
+    sum_old <= sum;
 
-    real_sum <= sum;
-
-    if test_count = 0 then
+    if test_count = 1 then
       set_seed <= '1';
       wait until rising_edge(clk);
       set_seed <= '0';
@@ -122,57 +107,89 @@ begin
     activ <= '1';
     wait until rising_edge(clk);
     activ <= '0';
+    wait until rising_edge(clk);
     wait for period / 8;
 
-    print("x1_expect         '= " & real'image(v_x(0)));
-    print("w1_expect         '= " & real'image(v_w(0)));
-    print("b/16_expect       '= " & real'image(v_b/16.0));
-    print("x1*w1_expect      '= " & real'image(v_x(0) * v_w(0)));
-    print("sum/16_expect     '= " & real'image(sum/16.0));
-    print("(sum+b)/16_expect '= " & real'image((sum+v_b)/16.0));
+    -- print("sop_expect   = " & real'image(sum));
+    -- print("    sum_expect   = " & real'image(sum+v_b));
 
-    print("Expected vs actual: "
-        & real'image(v_y) & " "
-        & real'image(sc_to_real(y)));
-    print(" ");
+    if test_count = NUM_CAL then
+      a_y := 16.0 * (real(to_integer(unsigned(y)))
+                  / 2.0**(SC_WIDTH-1) - 1.0);
+      print("Expected vs actual:  "
+          & real'image(sum + v_b) & " "
+          & real'image(a_y));
 
-    mse_error <= mse_error
-         + mse(v_y, sc_to_real(y));
-    if (abs(v_y - sc_to_real(y)) > max_error) then
-      max_error <= abs(v_y - sc_to_real(y));
+      mse_error <= mse_error + mse(v_y, a_y);
+      if (abs(v_y - a_y) > max_error) then
+        max_error <= abs(v_y - a_y);
+      end if;
+
+      assert (abs(v_y - a_y) < 1.5 OR a_y > 15.5 OR a_y < -15.5)
+        report "Far of wrong." severity failure;
     end if;
 
   end procedure test_case;
 
-    variable test_num      : integer := 2;
+    variable test_num      : integer := 1000;
+    variable input_num     : integer := NUM_CAL;
     constant rand_num      : integer := IN_SIZE * 2 + 1;
-    variable seed1, seed2  : positive := 3;
+    variable seed1, seed2  : positive := 4;
     variable rand          : real_array(0 to rand_num - 1);
   begin
     mse_error <= 0.0;    
     max_error <= 0.0;    
-    real_sum  <= 0.0;
     wait until reset = '0';
 
 
-    for i in 0 to test_num - 1 loop
-      print("* Test case (" & integer'image(i+1) & "):");
-      for j in 0 to rand_num - 1 loop
-        uniform(seed1, seed2, rand(j));  -- random value in range 0.0 to 1.0
-        rand(j) := (rand(j) * 2.0 - 1.0);  -- convert -1.0 to 1.0
-      end loop;
+    for train in  0 to test_num - 1 loop
+      test_count <= 0;
+      sum_old  <= 0.0;
 
-      test_case(rand(0 to IN_SIZE-1),
-                rand(IN_SIZE to 2*IN_SIZE-1),
-                0.0, real_sum
-      );
-      test_count <= test_count + 1;
+      uniform(seed1, seed2, rand(2*IN_SIZE));
+      rand(2*IN_SIZE) := rand(2*IN_SIZE) * 2.0 - 1.0;
+
+      for i in 0 to input_num - 1 loop
+        wait for period;
+        test_count <= test_count + 1;
+        wait for period;
+
+        for j in 0 to rand_num - 1 loop
+          uniform(seed1, seed2, rand(j));
+          rand(j) := (rand(j) * 2.0 - 1.0);
+        end loop;
+
+        test_case(rand(0 to IN_SIZE-1),
+                  rand(IN_SIZE to 2*IN_SIZE-1),
+                  rand(2*IN_SIZE));
+      end loop;
     end loop;
 
     wait for period;
     print("Mse = "
       & real'image(mse_error / real(test_num)));
     print("Max error = " & real'image(max_error));
+
+
+    print("");
+    print("Test special 1:");
+    for j in 0 to rand_num - 1 loop
+      rand(j) := 1.0;
+    end loop;
+    test_case(rand(0 to IN_SIZE-1),
+              rand(IN_SIZE to 2*IN_SIZE-1),
+              rand(2*IN_SIZE));
+
+    print("Test special 2:");
+    for j in 0 to (rand_num-1)/2 - 1 loop
+      rand(j) := 1.0;
+    end loop;
+    for j in (rand_num-1)/2 to rand_num-1 loop
+      rand(j) := -1.0;
+    end loop;
+    test_case(rand(0 to IN_SIZE-1),
+              rand(IN_SIZE to 2*IN_SIZE-1),
+              rand(2*IN_SIZE));
 
     finish(1);
   end process;

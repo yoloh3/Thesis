@@ -9,3 +9,5 @@
 svn/
 *sim/
 *doc/
+*.bin
+*matlab/
